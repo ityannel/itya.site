@@ -1,0 +1,38 @@
+#leftside {
+    height: 100%;
+    width: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#leftside img {
+    height: 70%;
+}
+
+#rightside {
+    height: 100%;
+    width: 50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+#name {
+    display:flex;
+    align-items:center;
+    gap: 10px;
+}
+
+body{
+    overflow-y:hidden;
+    display:flex;
+    height:100%;
+    font-family: "ta-marugo-gf-04", sans-serif;
+    font-weight: 300;
+    font-style: bold;
+}
+
+html{
+    height:100%;
+}
