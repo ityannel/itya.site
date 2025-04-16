@@ -17,16 +17,27 @@
         <link rel="icon" href="img/itya-48.png" sizes="48x48" type="image/png" /> 
         <link rel="icon" href="img/itya-64.png" sizes="62x62" type="image/png" />
         <link rel="stylesheet" href="main.css" />
-        >
+        <script>
+            (function(d) {
+              var config = {
+                kitId: 'qil2gax',
+                scriptTimeout: 3000,
+                async: true
+              },
+              h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
+            })(document);
+        </script>
     </head>
 
     <body>
-        <div>
+        <div id="leftside">
             <img src="img/itya-round-round.gif">
         </div>
-        <div>
-            <h1>いちゃ</h1>
-            <h2>itya</h2>
+        <div id="rightside">
+            <div id="name">
+                <h1>いちゃ</h1>
+                <h2>ITYA</h2>
+            </div>
         </div>
     </body>
 </html>
