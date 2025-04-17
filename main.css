@@ -24,6 +24,29 @@
     gap: 10px;
 }
 
+#block{
+    display:block;
+    justify-items:center;
+    margin:20px;
+    padding: 10px;
+}
+
+#moreBtn {
+    font-size:20px;
+    text-decoration:none;
+    color:white;
+    background-color:black;
+    border-radius:50px;
+    padding:10px;
+    font-style:bold;
+    transition:0.4s ease;
+}
+
+#moreBtn:hover {
+    color:black;
+    background-color:white;
+}
+
 body{
     overflow-y:hidden;
     display:flex;
@@ -38,8 +61,20 @@ html{
 }
 
 @media (max-width: 768px) {
-    #name {
-        display: block;
-        padding: ;
+    #leftside{
+        height:70%;
+    }
+    #rightside{
+        height:30%;
+    }
+
+    #leftside img {
+        margin: 100px;
+        height:70%;
+    }
+
+    body {
+        display:block;
+        justify-items:center;
     }
 }
