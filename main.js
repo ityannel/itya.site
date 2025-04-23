@@ -22,7 +22,7 @@ const displayNameDescription = new IntersectionObserver((entries, observer) => {
     entries.forEach(entry => {
         if (entry.isIntersecting){
             setTimeout(() => {
-                nameafter.style.opacity = "1";
+                nameafter.style.opacity = "0";
             }, 1000);
 
             displayNameDescription.unobserve(entry.namebefore);
