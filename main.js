@@ -1,40 +1,121 @@
-document.addEventListener("DOMContentLoaded", function() {
-    setTimeout(function() {
-        const elements = document.querySelectorAll(".btn");
-        elements.forEach((element) => {
-            element.style.transition = "opacity 1s ease-out";
-            element.style.opacity = "1";
-        })
+document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      document.querySelectorAll(".btn").forEach((element) => {
+        element.style.transition = "opacity 1s ease-out";
+        element.style.opacity = "1";
+      });
     }, 500);
 });
-
+  
 const end_loader = () => {
     const trans = document.getElementById("loader");
-    trans.style.transition = "opacity 0.6s ease-out"
+    trans.style.transition = "opacity 0.6s ease-out";
     trans.style.opacity = "0";
-    setTimeout(function () {trans.style.display = "none";}, 1000)
-}
+    setTimeout(() => {
+      trans.style.display = "none";
+    }, 1000);
+};
+  
 
-const nameafter = document.getElementById("nameafter");
-const namebefore = document.getElementById("namebefore");
-
-const displayNameDescription = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting){
-            setTimeout(() => {
-                nameafter.style.opacity = "1";
-            }, 1000);
-
-            displayNameDescription.unobserve(entry.namebefore);
+const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+            const targetSelector = entry.target.getAttribute("data-show");
+            const targetEl = document.querySelector(targetSelector);
+            if (targetEl) {
+                setTimeout(() => {
+                targetEl.classList.add("visible");
+                }, 500);
+            }
+            observer.unobserve(entry.target);
         }
     });
 }, {
     threshold: 0.7
 });
 
-displayNameDescription.observe(namebefore); 
+document.querySelectorAll(".fade-trigger").forEach((el) => {
+    observer.observe(el);
+});
 
-window.onload = () => {
-    scrollTo(0,0);
-    setTimeout(end_loader, 500);
-}
+  
+window.addEventListener("load", () => {
+    scrollTo(0, 0);
+    setTimeout(() => {
+        end_loader();
+
+        const canvas = document.getElementById("skin-canvas");
+        if (!canvas) return;
+
+        const skins = [
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-skin.png",
+            "img/itya-sunglass.png",
+            "img/itya-colorful.png",
+            "img/itya-skin-hanten.png"
+        ];
+
+        const animations = [
+            new skinview3d.WalkingAnimation(),
+            new skinview3d.RunningAnimation(),
+            new skinview3d.IdleAnimation(),
+            new skinview3d.IdleAnimation(),
+            new skinview3d.IdleAnimation(),
+            new skinview3d.IdleAnimation(),
+            new skinview3d.IdleAnimation(),
+            new skinview3d.IdleAnimation(),
+            new skinview3d.IdleAnimation()
+        ]
+        const choosedSkin = skins[Math.floor(Math.random() * skins.length)];
+        const choosedAnimations = animations[Math.floor(Math.random() * animations.length)];
+
+        const viewer = new skinview3d.SkinViewer({
+            canvas: canvas,
+            width: 600,
+            height: 600,
+            skin: choosedSkin
+        });
+
+        viewer.controls.enableZoom = false;
+        viewer.animation = choosedAnimations;
+        viewer.animation.speed = 1;
+
+        let autoRotate = true;
+        let targetRotation = 0;
+
+        const animateRotation = () => {
+            if (autoRotate) {
+                targetRotation += 0.01;
+            }
+            viewer.playerObject.rotation.y += (targetRotation - viewer.playerObject.rotation.y) * 0.1;
+            requestAnimationFrame(animateRotation);
+        };
+
+        animateRotation();
+
+        let scrollTimeout = null;
+        window.addEventListener("scroll", () => {
+            autoRotate = false;
+            targetRotation = window.scrollY * 0.01;
+
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                autoRotate = true;
+            }, 1000);
+        });
+
+        if (location.hash) {
+            history.replaceState(null, null, location.pathname);
+        }
+    }, 500);
+});
+
+
+
