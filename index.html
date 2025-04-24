@@ -30,39 +30,64 @@
     </head>
 
     <body>
-        
-        <div id="loader">
-            <img src="img/itya-loading.gif">
-            <p>ろーどちゅう</p>
-        </div>
-   
-        <div id="leftside">
-            <img src="img/itya-round-round.gif">
-        </div>
+        <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
+        <script src="main.js" defer></script>
 
+
+        <div id="loader">
+          <img src="img/itya-loading.gif" alt="Loading...">
+          <p>ろーどちゅう</p>
+        </div>
+      
+        <div id="leftside">
+          <canvas id="skin-canvas"></canvas>
+        </div>
+      
         <div id="rightside">
-            <div id="top">
-                <div id="name" class="row">
-                    <p class="bTitle">いちゃ</p>
-                    <p class="sTitle">ITYA</p>
-                </div>
-                <a class="opacity0 sTitle btn" href="#int-name">自己紹介</a>
+          <div id="top">
+            <div class="row">
+              <p class="bTitle">いちゃ</p>
+              <p class="sTitle">ITYA</p>
             </div>
-            <div id="int-name" class="column">
-                <div class="row" id="namebefore">
-                    <h1 class="sTitle">なまえ</h1>
-                    <p class="bTitle">いちゃ</p>
+            <a class="sTitle btn fade-target" href="#int-name" data-show="#int-name">自己紹介</a>
+          </div>
+
+            <div id="introductions">
+                <div class="ints column fade-section" id="int-name">
+                    <div class="row fade-trigger" data-show="#nameafter">
+                        <h1 class="sTitle">なまえ</h1>
+                        <p class="bTitle">いちゃ</p>
+                    </div>
+                    <div id="nameafter" class="fade-target opacity0">
+                        <p class="description ssTitle">2021年の夏、ぼくはおじいちゃんに買ってもらった「あつまれどうぶつの森」を妹と一緒にプレイした。何かあつもりっぽい名前を付けようと、妹が提案してくれたのが、僕の本名を少しもじった「いちゃ」であった。特に意味はないとのことだが、僕はこの名前をとても気に入っている。</p>
+                        <a class="sTitle btn" href="#int-kosen">次へ</a>
+                    </div>
                 </div>
-                <div id="nameafter" class="opacity0">
-                    <p id="origin" class="ssTitle">2021年の夏、ぼくはおじいちゃんに買ってもらった
-                        「あつまれどうぶつの森」を妹と一緒にプレイした。何かあつもりっぽい名前を付けようと、
-                        妹が提案してくれたのが、僕の本名を少しもじった「いちゃ」であった。特に意味はないとのことだが、
-                        僕はこの名前をとても気に入っている。
-                    </p>
-                    <a class="sTitle btn" href="#int-name">次へ</a>
+            
+                <div class="ints column fade-section" id="int-kosen">
+                    <div class="row fade-trigger" data-show="#kosenafter">
+                        <h1 class="sTitle">こうせん</h1>
+                        <p class="bTitle">函館高専</p>
+                    </div>
+                    <div id="kosenafter" class="fade-target opacity0">
+                        <p class="ssTitle description">函館高専愛好会会長、（函館高専栄光の民代表）。その名の通り、函館高専をこよなく愛している。現在の目標はSMZ校長先生とマブダチになったうえで、その校長のマブダチであるはじめしゃちょーと元気先生に、YouTubeでコラボしてもらうこと。
+                        </p>
+                        <a class="sTitle btn" href="#int-field">次へ</a>
+                    </div>
+                </div>
+
+                <div class="ints column fade-section" id="int-field">
+                    <div class="row fade-trigger" data-show="#fieldafter">
+                        <h1 class="sTitle">できること</h1>
+                        <p class="bTitle">デザイン</p>
+                    </div>
+                    <div id="fieldafter" class="fade-target opacity0">
+                        <p class="ssTitle description">と、多少のプログラミング。HTML/CSS/JavaScript/Python/Cを学習中（ものすごくメジャー）。FigmaやAdobeXDを使用したアプリケーション/UIデザインや、Illustratorを用いたポスター、マップ等の製作もやってます。多少の動画編集スキルも一応ありますが、<a href="https://www.youtube.com/@%E3%81%84%E3%81%A1%E3%82%83%E3%82%93%E3%81%AD%E3%82%8B">私のYouTube</a>は全く面白くないと好評です。
+                        </p>
+                        <a class="sTitle btn" href="#">次へ</a>
+                    </div>
                 </div>
             </div>
         </div>
-        <script src="main.js"></script>
     </body>
 </html>
