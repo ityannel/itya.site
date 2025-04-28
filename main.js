@@ -1,22 +1,25 @@
 document.addEventListener("DOMContentLoaded", function () {
+
+    //ボタンを表示するニダ
     setTimeout(function () {
-      document.querySelectorAll(".btn").forEach((element) => {
-        element.style.transition = "opacity 1s ease-out";
-        element.style.opacity = "1";
-      });
+        document.querySelectorAll(".btn").forEach((element) => {
+            element.style.transition = "all 0.2s ease-out";
+            element.style.opacity = "1";
+        });
     }, 500);
 });
-  
+
+//ロード処理終わったら1000msで消すニダ
 const end_loader = () => {
     const trans = document.getElementById("loader");
-    trans.style.transition = "opacity 0.6s ease-out";
+    trans.style.transition = "all 0.6s ease-out";
     trans.style.opacity = "0";
     setTimeout(() => {
       trans.style.display = "none";
     }, 1000);
 };
   
-
+//0.7/1しかいにはいったら○○afterをぶわっと表示させるニダ
 const observer = new IntersectionObserver((entries, observer) => {
     entries.forEach((entry) => {
         if (entry.isIntersecting) {
@@ -38,7 +41,20 @@ document.querySelectorAll(".fade-trigger").forEach((el) => {
     observer.observe(el);
 });
 
-  
+//スクロールしても#○○付けないニダ
+document.querySelectorAll("[data-scroll]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const targetSelector = btn.getAttribute("data-scroll");
+        const targetEl = document.querySelector(targetSelector);
+        if (targetEl) {
+            targetEl.scrollIntoView({ behavior: "smooth"});
+            history.replaceState(null,null,location.pathname);
+        }
+    })
+})
+
+//
 window.addEventListener("load", () => {
     scrollTo(0, 0);
     setTimeout(() => {
@@ -70,9 +86,9 @@ window.addEventListener("load", () => {
             new skinview3d.IdleAnimation(),
             new skinview3d.IdleAnimation(),
             new skinview3d.IdleAnimation(),
-            new skinview3d.IdleAnimation(),
             new skinview3d.IdleAnimation()
         ]
+
         const choosedSkin = skins[Math.floor(Math.random() * skins.length)];
         const choosedAnimations = animations[Math.floor(Math.random() * animations.length)];
 
@@ -100,6 +116,8 @@ window.addEventListener("load", () => {
 
         animateRotation();
 
+        
+
         let scrollTimeout = null;
         window.addEventListener("scroll", () => {
             autoRotate = false;
@@ -116,6 +134,3 @@ window.addEventListener("load", () => {
         }
     }, 500);
 });
-
-
-
