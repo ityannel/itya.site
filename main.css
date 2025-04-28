@@ -180,6 +180,6 @@ html {
 }
 @media (max-width: 768px) {
     #smartphone{
-        display: fixed;
+        display: block;
     }
 }
