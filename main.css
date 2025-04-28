@@ -174,12 +174,13 @@ html {
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center;
     opacity: 1;
     gap: 10px;
     display: none;
 }
 @media (max-width: 768px) {
     #smartphone{
-        display: block;
+        display: fixed;
     }
 }
