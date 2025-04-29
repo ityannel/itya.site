@@ -1,97 +1,145 @@
-<!DOCTYPE HTML>
-<html>
-    <head>
-        <script>
-        (function(d) {
-            var config = {
-              kitId: 'qil2gax',
-              scriptTimeout: 3000,
-              async: true
-            },
-            h=d.documentElement,t=setTimeout(function(){h.className=h.className.replace(/\bwf-loading\b/g,"")+" wf-inactive";},config.scriptTimeout),tk=d.createElement("script"),f=false,s=d.getElementsByTagName("script")[0],a;h.className+=" wf-loading";tk.src='https://use.typekit.net/'+config.kitId+'.js';tk.async=true;tk.onload=tk.onreadystatechange=function(){a=this.readyState;if(f||a&&a!="complete"&&a!="loaded")return;f=true;clearTimeout(t);try{Typekit.load(config)}catch(e){}};s.parentNode.insertBefore(tk,s)
-          })(document);
-        </script>
-        <title>itya.site</title>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width,initial-scale=1" />
-        <meta name="description" content="いちゃの公式ホームページ" />
-        <meta property="og:url" content="https://itya.site" />
-        <meta property="og:title" content="itya.site" />
-        <meta property="og:type" content="Self-introduction">
-        <meta property="og:image" content="img/OGP_of_itya_site.png" />
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@ityakura" />
-        <link rel="icon" href="img/itya-16.png" sizes="16x16" type="image/png" /> 
-        <link rel="icon" href="img/itya-32.png" sizes="32x32" type="image/png" />  
-        <link rel="icon" href="img/itya-48.png" sizes="48x48" type="image/png" /> 
-        <link rel="icon" href="img/itya-64.png" sizes="62x62" type="image/png" />
-        <link rel="stylesheet" href="main.css" />
-    </head>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <script>
+    (function(d) {
+      var config = {
+        kitId: 'qil2gax',
+        scriptTimeout: 3000,
+        async: true
+      },
+      h = d.documentElement,
+      t = setTimeout(function() {
+        h.className = h.className.replace(/\bwf-loading\b/g, "") + " wf-inactive";
+      }, config.scriptTimeout),
+      tk = d.createElement("script"),
+      f = false,
+      s = d.getElementsByTagName("script")[0],
+      a;
+      h.className += " wf-loading";
+      tk.src = 'https://use.typekit.net/' + config.kitId + '.js';
+      tk.async = true;
+      tk.onload = tk.onreadystatechange = function() {
+        a = this.readyState;
+        if (f || a && a !== "complete" && a !== "loaded") return;
+        f = true;
+        clearTimeout(t);
+        try { Typekit.load(config) } catch (e) {}
+      };
+      s.parentNode.insertBefore(tk, s);
+    })(document);
+  </script>
+  <title>itya.site</title>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="いちゃの公式ホームページ">
+  <meta property="og:url" content="https://itya.site">
+  <meta property="og:title" content="itya.site">
+  <meta property="og:type" content="Self-introduction">
+  <meta property="og:image" content="img/OGP_of_itya_site.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@ityakura">
+  <link rel="icon" href="img/itya-16.png" sizes="16x16" type="image/png">
+  <link rel="icon" href="img/itya-32.png" sizes="32x32" type="image/png">
+  <link rel="icon" href="img/itya-48.png" sizes="48x48" type="image/png">
+  <link rel="icon" href="img/itya-64.png" sizes="64x64" type="image/png">
+  <link rel="stylesheet" href="main.css">
+</head>
 
-    <body>
-        <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
-        <script src="main.js" defer></script>
+<body>
+  <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
+  <script src="main.js" defer></script>
 
-        <div id="smartphone">
-            <img src="img/itya-loading.gif" alt="Loading...">
-                <p class="bTitle">スマホ版は工事中です！</p>
-                <p class="sTitle">完成までもうしばらくお待ちください</p>
+  <div id="smartphone">
+    <img src="img/itya-loading.gif" alt="Loading...">
+    <p class="bTitle">スマホ版は工事中です！</p>
+    <p class="sTitle">完成までもうしばらくお待ちください</p>
+  </div>
+
+  <div id="loader">
+    <img src="img/itya-loading.gif" alt="Loading...">
+    <p>ろーどちゅう</p>
+  </div>
+
+  <div id="leftside">
+    <canvas id="skin-canvas"></canvas>
+  </div>
+
+  <div id="rightside">
+    <div id="top">
+      <div class="row">
+        <p class="bTitle">いちゃ</p>
+        <p class="sTitle">ITYA</p>
+      </div>
+      <a class="sTitle btn fade-target" href="#int-name" data-show="#int-name">自己紹介</a>
+    </div>
+
+    <div id="introductions">
+      <div class="ints column fade-section" id="int-name">
+        <div class="row fade-trigger" data-show="#nameafter">
+          <h1 class="sTitle">なまえ</h1>
+          <p class="bTitle">いちゃ</p>
         </div>
-        <div id="loader">
-          <img src="img/itya-loading.gif" alt="Loading...">
-          <p>ろーどちゅう</p>
+        <div id="nameafter" class="fade-target opacity0">
+          <p class="description ssTitle">2021年の夏、ぼくはおじいちゃんに買ってもらった「あつまれどうぶつの森」を妹と一緒にプレイした。何かあつもりっぽい名前を付けようと、妹が提案してくれたのが、僕の本名を少しもじった「いちゃ」であった。特に意味はないとのことだが、僕はこの名前をとても気に入っている。</p>
+          <a class="sTitle btn" href="#int-kosen">次へ</a>
         </div>
-      
-        <div id="leftside">
-          <canvas id="skin-canvas"></canvas>
+      </div>
+
+      <div class="ints column fade-section" id="int-kosen">
+        <div class="row fade-trigger" data-show="#kosenafter">
+          <h1 class="sTitle">こうせん</h1>
+          <p class="bTitle">函館高専</p>
         </div>
-      
-        <div id="rightside">
-          <div id="top">
-            <div class="row">
-              <p class="bTitle">いちゃ</p>
-              <p class="sTitle">ITYA</p>
+        <div id="kosenafter" class="fade-target opacity0">
+          <p class="ssTitle description">函館高専愛好会会長、（函館高専栄光の民代表）。その名の通り、函館高専をこよなく愛している。現在の目標はSMZ校長先生とマブダチになったうえで、その校長のマブダチであるはじめしゃちょーと元気先生に、YouTubeでコラボしてもらうこと。</p>
+          <a class="sTitle btn" href="#int-field">次へ</a>
+        </div>
+      </div>
+
+      <div class="ints column fade-section" id="int-field">
+        <div class="row fade-trigger" data-show="#fieldafter">
+          <h1 class="sTitle">できること</h1>
+          <p class="bTitle">デザイン</p>
+        </div>
+        <div id="fieldafter" class="fade-target opacity0">
+          <p class="ssTitle description">と、多少のプログラミング。HTML/CSS/JavaScript/Python/Cを学習中（ものすごくメジャー）。FigmaやAdobeXDを使用したアプリケーション/UIデザインや、Illustratorを用いたポスター、マップ等の製作もやってます。多少の動画編集スキルも一応ありますが、<a href="https://www.youtube.com/@%E3%81%84%E3%81%A1%E3%82%83%E3%82%93%E3%81%AD%E3%82%8B">私のYouTube</a>は全く面白くないと好評です。</p>
+          <a class="sTitle btn" href="#portfolio1">次へ</a>
+        </div>
+      </div>
+
+      <div class="ints column fade-section" id="portfolio1">
+        <div class="row fade-trigger" data-show="#portfolio1after">
+          <h1 class="bTitle">ポートフォリオ</h1>
+          <p class="sTitle">① デザイン</p>
+        </div>
+        <div id="portfolio1after" class="fade-target opacity0">
+            <div class="slide-wrapper">
+                <div class="slide">
+                  <div><img src="img/portfolio1/slide1.png"></div>
+                  <div><img src="img/portfolio1/slide2.png"></div>
+                  <div><img src="img/portfolio1/slide4.png"></div>
+                  <div><img src="img/portfolio1/slide5.png"></div>
+                  <div><img src="img/portfolio1/slide6.png"></div>
+                  <div><img src="img/portfolio1/slide7.png"></div>
+                </div>
+                <span class="prev"></span>
+                <span class="next"></span>
+                <ul class="indicator">
+                  <li class="list"></li>
+                  <li class="list"></li>
+                  <li class="list"></li>
+                  <li class="list"></li>
+                  <li class="list"></li>
+                  <li class="list"></li>
+                </ul>
             </div>
-            <a class="sTitle btn fade-target" href="#int-name" data-show="#int-name">自己紹介</a>
-          </div>
-
-            <div id="introductions">
-                <div class="ints column fade-section" id="int-name">
-                    <div class="row fade-trigger" data-show="#nameafter">
-                        <h1 class="sTitle">なまえ</h1>
-                        <p class="bTitle">いちゃ</p>
-                    </div>
-                    <div id="nameafter" class="fade-target opacity0">
-                        <p class="description ssTitle">2021年の夏、ぼくはおじいちゃんに買ってもらった「あつまれどうぶつの森」を妹と一緒にプレイした。何かあつもりっぽい名前を付けようと、妹が提案してくれたのが、僕の本名を少しもじった「いちゃ」であった。特に意味はないとのことだが、僕はこの名前をとても気に入っている。</p>
-                        <a class="sTitle btn" href="#int-kosen">次へ</a>
-                    </div>
-                </div>
-            
-                <div class="ints column fade-section" id="int-kosen">
-                    <div class="row fade-trigger" data-show="#kosenafter">
-                        <h1 class="sTitle">こうせん</h1>
-                        <p class="bTitle">函館高専</p>
-                    </div>
-                    <div id="kosenafter" class="fade-target opacity0">
-                        <p class="ssTitle description">函館高専愛好会会長、（函館高専栄光の民代表）。その名の通り、函館高専をこよなく愛している。現在の目標はSMZ校長先生とマブダチになったうえで、その校長のマブダチであるはじめしゃちょーと元気先生に、YouTubeでコラボしてもらうこと。
-                        </p>
-                        <a class="sTitle btn" href="#int-field">次へ</a>
-                    </div>
-                </div>
-
-                <div class="ints column fade-section" id="int-field">
-                    <div class="row fade-trigger" data-show="#fieldafter">
-                        <h1 class="sTitle">できること</h1>
-                        <p class="bTitle">デザイン</p>
-                    </div>
-                    <div id="fieldafter" class="fade-target opacity0">
-                        <p class="ssTitle description">と、多少のプログラミング。HTML/CSS/JavaScript/Python/Cを学習中（ものすごくメジャー）。FigmaやAdobeXDを使用したアプリケーション/UIデザインや、Illustratorを用いたポスター、マップ等の製作もやってます。多少の動画編集スキルも一応ありますが、<a href="https://www.youtube.com/@%E3%81%84%E3%81%A1%E3%82%83%E3%82%93%E3%81%AD%E3%82%8B">私のYouTube</a>は全く面白くないと好評です。
-                        </p>
-                        <a class="sTitle btn" href="#">次へ</a>
-                    </div>
-                </div>
-            </div>
+            <p id="portfolio1Description" class="ssTitle description">「スタ街」アプリデザイン</p>
+            <a class="sTitle btn" href="#">次へ</a>
         </div>
-    </body>
+      </div>
+    </div>
+  </div>
+</body>
 </html>
