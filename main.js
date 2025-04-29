@@ -16,7 +16,7 @@ const end_loader = () => {
     trans.style.opacity = "0";
     setTimeout(() => {
       trans.style.display = "none";
-    }, 1000);
+    }, 2000);
 };
   
 //0.7/1しかいにはいったら○○afterをぶわっと表示させるニダ
