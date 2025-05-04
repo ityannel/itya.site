@@ -91,11 +91,16 @@ window.addEventListener("load", () => {
 
         const choosedSkin = skins[Math.floor(Math.random() * skins.length)];
         const choosedAnimations = animations[Math.floor(Math.random() * animations.length)];
+        const width = window.innerWidth;
+        const canvasSize = width > 768 ? 600 : 400;
+
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
 
         const viewer = new skinview3d.SkinViewer({
             canvas: canvas,
-            width: 600,
-            height: 600,
+            width: canvasSize,
+            height: canvasSize,
             skin: choosedSkin
         });
 
@@ -135,6 +140,8 @@ window.addEventListener("load", () => {
     }, 500);
 });
 
+
+//スライドショーの処理ニダ
 document.querySelectorAll(".slide-wrapper").forEach(wrapper => {
     const slide = wrapper.querySelector(".slide");
     const slides = slide.querySelectorAll("div");
@@ -142,6 +149,7 @@ document.querySelectorAll(".slide-wrapper").forEach(wrapper => {
     const next = wrapper.querySelector(".next");
     const indicators = wrapper.querySelectorAll(".indicator .list");
     const portfolio1Description = document.getElementById("portfolio1Description");
+    //わかりづらいけど上と下で「s」がついているのとついていないの！
     const portfolio1Descriptions = [
         "「スタ街」アプリデザイン",
         "「Music etc...」アプリデザイン",
@@ -153,43 +161,59 @@ document.querySelectorAll(".slide-wrapper").forEach(wrapper => {
 
     let current = 0;
     const totalSlides = slides.length;
+    let autoPlayInterval;
 
-    // スライド全体と各スライドの幅を動的に設定
+    //
     slide.style.width = `${totalSlides * 100}%`;
     slides.forEach(slideDiv => {
         slideDiv.style.width = `${100 / totalSlides}%`;
     });
 
-    // スライドの表示更新
     const updateSlidePosition = () => {
         slide.style.transform = `translateX(-${(100 / totalSlides) * current}%)`;
         indicators.forEach((indicator, index) => {
-            indicator.style.backgroundColor = index === current ? "#000" : "#fff";
+            indicator.style.backgroundColor = index === current ? "black" : "white";
         });
         portfolio1Description.textContent = portfolio1Descriptions[current];
-        
     };
 
-    // 次へ
-    next.addEventListener("click", () => {
+    const goToNextSlide = () => {
         current = (current + 1) % totalSlides;
         updateSlidePosition();
-    });
+    };
 
-    // 前へ
-    prev.addEventListener("click", () => {
+    const goToPrevSlide = () => {
         current = (current - 1 + totalSlides) % totalSlides;
         updateSlidePosition();
+    };
+
+    const startAutoPlay = () => {
+        autoPlayInterval = setInterval(goToNextSlide, 5000);
+    };
+
+    const resetAutoPlay = () => {
+        clearInterval(autoPlayInterval);
+        startAutoPlay();
+    };
+
+    next.addEventListener("click", () => {
+        goToNextSlide();
+        resetAutoPlay();
     });
 
-    // インジケータークリック
+    prev.addEventListener("click", () => {
+        goToPrevSlide();
+        resetAutoPlay();
+    });
+
     indicators.forEach((indicator, index) => {
         indicator.addEventListener("click", () => {
             current = index;
             updateSlidePosition();
+            resetAutoPlay();
         });
     });
 
-    // 初期表示
     updateSlidePosition();
+    startAutoPlay();
 });
