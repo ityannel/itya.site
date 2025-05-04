@@ -51,12 +51,6 @@
   <script src="https://unpkg.com/skinview3d/bundles/skinview3d.bundle.js"></script>
   <script src="main.js" defer></script>
 
-  <div id="smartphone">
-    <img src="img/itya-loading.gif" alt="Loading...">
-    <p class="bTitle">スマホ版は工事中です！</p>
-    <p class="sTitle">完成までもうしばらくお待ちください</p>
-  </div>
-
   <div id="loader">
     <img src="img/itya-loading.gif" alt="Loading...">
     <p>ろーどちゅう</p>
@@ -78,7 +72,6 @@
     <div id="introductions">
       <div class="ints column fade-section" id="int-name">
         <div class="row fade-trigger" data-show="#nameafter">
-          <h1 class="sTitle">なまえ</h1>
           <p class="bTitle">いちゃ</p>
         </div>
         <div id="nameafter" class="fade-target opacity0">
@@ -89,8 +82,7 @@
 
       <div class="ints column fade-section" id="int-kosen">
         <div class="row fade-trigger" data-show="#kosenafter">
-          <h1 class="sTitle">こうせん</h1>
-          <p class="bTitle">函館高専</p>
+          <p class="bTitle">我らが函館高専</p>
         </div>
         <div id="kosenafter" class="fade-target opacity0">
           <p class="ssTitle description">函館高専愛好会会長、（函館高専栄光の民代表）。その名の通り、函館高専をこよなく愛している。現在の目標はSMZ校長先生とマブダチになったうえで、その校長のマブダチであるはじめしゃちょーと元気先生に、YouTubeでコラボしてもらうこと。</p>
@@ -100,11 +92,10 @@
 
       <div class="ints column fade-section" id="int-field">
         <div class="row fade-trigger" data-show="#fieldafter">
-          <h1 class="sTitle">できること</h1>
-          <p class="bTitle">デザイン</p>
+          <p class="bTitle">ぼくのデザイン</p>
         </div>
         <div id="fieldafter" class="fade-target opacity0">
-          <p class="ssTitle description">と、多少のプログラミング。HTML/CSS/JavaScript/Python/Cを学習中（ものすごくメジャー）。FigmaやAdobeXDを使用したアプリケーション/UIデザインや、Illustratorを用いたポスター、マップ等の製作もやってます。多少の動画編集スキルも一応ありますが、<a href="https://www.youtube.com/@%E3%81%84%E3%81%A1%E3%82%83%E3%82%93%E3%81%AD%E3%82%8B">私のYouTube</a>は全く面白くないと好評です。</p>
+          <p class="ssTitle description">デザインとは言いますが、初学者です。言語は、HTML()/CSS()/JavaScript/Python/Cを学習中。FigmaやAdobeXDを使用したアプリケーション/UIデザインや、Illustratorを用いたポスター、マップ等の製作もやってます。多少の動画編集スキルも一応ありますが、<a href="https://www.youtube.com/@%E3%81%84%E3%81%A1%E3%82%83%E3%82%93%E3%81%AD%E3%82%8B">私のYouTube</a>は全く面白くないと好評です。</p>
           <a class="sTitle btn" href="#portfolio1">次へ</a>
         </div>
       </div>
@@ -112,7 +103,6 @@
       <div class="ints column fade-section" id="portfolio1">
         <div class="row fade-trigger" data-show="#portfolio1after">
           <h1 class="bTitle">ポートフォリオ</h1>
-          <p class="sTitle">① デザイン</p>
         </div>
         <div id="portfolio1after" class="fade-target opacity0">
             <div class="slide-wrapper">
@@ -135,11 +125,25 @@
                   <li class="list"></li>
                 </ul>
             </div>
-            <p id="portfolio1Description" class="ssTitle description">「スタ街」アプリデザイン</p>
-            <a class="sTitle btn" href="#">次へ</a>
+            <p id="portfolio1Description" class="ssTitle description"></p>
+            <a class="sTitle btn" href="#int-sns">次へ</a>
         </div>
       </div>
-    </div>
+
+      <div class="ints column fade-section" id="int-sns">
+        <div class="row fade-trigger" data-show="#snsafter">
+          <p class="bTitle">SNS</p>
+        </div>
+        <div id="snsafter" class="fade-target opacity0">
+          <a class="snss" href="https://x.com/ityakura" target="_blank" rel="noopener noreferrer">
+            <img src="img/x.png" alt="Xアイコン"><span>@ityakura</span>
+          </a>
+          <a class="snss" href="https://github.com/ityannel" target="_blank" rel="noopener noreferrer">
+            <img src="img/github.png" alt="GitHubアイコン"><span>ityannel</span>
+          </a>
+          <a class="sTitle btn" href="#">戻る</a>
+        </div>
+      </div>
   </div>
 </body>
 </html>
