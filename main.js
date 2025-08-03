@@ -216,4 +216,28 @@ document.querySelectorAll(".slide-wrapper").forEach(wrapper => {
 
     updateSlidePosition();
     startAutoPlay();
+
+    let startX = 0;
+    let endX = 0;
+
+    slide.addEventListener("touchstart", (e) => {
+        startX = e.touches[0].clientX;
+    }, { passive: true});
+
+    slide.addEventListener("touchmove", (e) => {
+        endX = e.touches[0].clientX;
+    }, { passive: true});
+
+    slide.addEventListener("touchend", () => {
+        const deltaX = endX - startX;
+
+        if (Math.abs(deltaX) > 50) {
+            if (deltaX < 0) {
+                goToNextSlide();
+            } else {
+                goToPrevSlide();
+            }
+            resetAutoPlay();
+        }
+    })
 });
