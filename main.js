@@ -156,7 +156,8 @@ document.querySelectorAll(".slide-wrapper").forEach(wrapper => {
         "札幌急行電鉄架空路線図",
         "HAKODATE INTERNATIONAL AIRPORT構想図とロゴ",
         "函館高専キャンパスマップ",
-        "函館高専愛好会ウェブ用ポスター"
+        "函館高専愛好会ウェブ用ポスター",
+        "SAPPORO THE TUBE ロゴデザイン"
     ];
 
     let current = 0;
@@ -241,3 +242,4 @@ document.querySelectorAll(".slide-wrapper").forEach(wrapper => {
         }
     })
 });
+
