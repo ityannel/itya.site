@@ -1,0 +1,192 @@
+*, body, ul {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --main-font: "ta-marugo-gf-04", sans-serif;
+  width: 100%;
+}
+:lang(en) { --main-font: "Nunito", sans-serif; }
+:lang(zh) { --main-font: "Noto Sans SC", sans-serif; }
+
+body {
+  font-family: var(--main-font);
+  width: 100% !important;
+  font-weight: 300;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+html {
+  height: 100%;
+  scroll-behavior: smooth;
+}
+
+#top {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.name-row {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 15px;
+  line-height: 1;
+}
+
+.name-jp{
+  font-size: 80px;
+  margin: 0;
+  color: #000;
+}
+
+.name-en{
+  font-size: 30px;
+  color: 100;
+}
+
+#leftside {
+  align-items: center;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  left: 0;
+  position: fixed;
+  top: 0;
+  width: 50vw;
+  z-index: 999;
+  pointer-events: none;
+}
+#leftside img { height: 50%; }
+
+#rightside {
+  display: flex;
+  flex-direction: column;
+  margin-left: 50vw;
+  width: 50vw;
+  min-height: 100vh;
+  padding: 40px;
+  background-color: #fff;
+  position: relative;
+}
+
+
+.fade-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.fade-target {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  transition: opacity 1s ease-out;
+}
+.fade-target.visible { opacity: 1; }
+.fade-target:not(.visible) { opacity: 0; }
+
+.bTitle {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  line-height: 1.2;
+}
+.description {
+  width: 70%;
+  font-size: 20px;
+}
+
+/* ▼ ボタン */
+.btn {
+  background-color: black;
+  border-radius: 50px;
+  color: white;
+  display: inline-block;
+  font-size: 20px;
+  font-weight: 500;
+  padding: 6px 14px;
+  text-decoration: none;
+  transition: all .4s ease;
+  margin-top: 20px;
+}
+.btn:hover {
+  background-color: white;
+  color: black;
+}
+
+.portfolio-wrapper {
+  width: 70%;
+  aspect-ratio: 5 / 4;
+  border: 2px solid black;
+  border-radius: 20px;
+  overflow: hidden;
+  background-color: white;
+  position: relative;
+}
+
+.sns-id {
+  font-family: "Nunito", "Helvetica Neue", Arial, sans-serif;
+  letter-spacing: 0.05em;
+}
+
+@media (max-width: 768px) {
+  #leftside {
+    width: 120px;
+    height: 120px;
+    top: auto;
+    bottom: 10px;
+    right: 10px;
+    left: auto;
+    background-color: transparent;
+  }
+
+  #leftside canvas {
+
+    width: 100% !important;
+
+    height: 100% !important;
+
+  }
+  #rightside {
+    margin-left: 0;
+    width: 100%;
+    padding: 24px;
+  }
+
+  .fade-section {
+    min-height: 100vh;
+    justify-content: center;
+    padding: 0 24px;
+    margin-bottom: 0;
+  }
+
+  #top.fade-section {
+    min-height: 100vh;
+  }
+
+  .description {
+    width: 100%;
+    font-size: 16px;
+  }
+  .portfolio-wrapper {
+    width: 100%;
+  }
+
+  .bTitle { font-size: 32px; }
+
+  .name-jp {font-size: 60px;}
+  .name-en {font-size: 24px;}
+
+  #top{ min-height: 80vh; }
+}

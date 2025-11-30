@@ -1,0 +1,40 @@
+{
+  "hero": {
+    "title": "Itya",
+    "subtitle": "いちゃ",
+    "button": "About Me"
+  },
+  "profile": {
+    "title": "Who is Itya?",
+    "text": "In the summer of 2021, my grandpa bought me 'Animal Crossing: New Horizons'. My sister suggested giving myself a name that fit the game's vibe, so she tweaked my real name a bit and came up with 'Itya'. It doesn't mean anything special, but I really like it.",
+    "next": "Next"
+  },
+  "kosen": {
+    "title": "Our Beloved♥ Hakodate Kosen",
+    "text": "President of the Hakodate Kosen Appreciation Club. I'm fighting daily to share the charm of our school. My current goal is to become besties with Principal Shimizu, then connect with his buddy Hajime Syacho, and finally collab with *his* buddy, Mr. Beast.",
+    "next": "Next"
+  },
+  "design": {
+    "title": "My Designs",
+    "text": "Web, UI/UX, and Graphic Design. Lately, I've been into creating fictional railway maps. I also have some video editing skills, but my YouTube channel is famously rated as 'totally boring'.",
+    "next": "Next"
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "next": "Next",
+    "items": {
+      "0": "Donan EXPO Exhibition: \"100 Threads of Intention\"",
+      "1": "\"Suta-Machi\" App Design",
+      "2": "\"Music etc...\" App Design",
+      "3": "Fictional Route Map: Sapporo Express Railway",
+      "4": "Hakodate International Airport: Concept Plan & Logo",
+      "5": "Hakodate Kosen Campus Map",
+      "6": "Web Poster for Hakodate Kosen Appreciation Club",
+      "7": "SAPPORO THE TUBE Logo Design"
+    }
+  },
+  "sns": {
+    "title": "Socials",
+    "back": "Back"
+  }
+}
