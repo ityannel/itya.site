@@ -13,14 +13,14 @@ const Portfolio = () => {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const slides = [
-    { img: "/img/portfolio1/slide9.png", id: "0" },
-    { img: "/img/portfolio1/slide1.png", id: "1" },
-    { img: "/img/portfolio1/slide2.png", id: "2" },
-    { img: "/img/portfolio1/slide4.png", id: "3" },
-    { img: "/img/portfolio1/slide5.png", id: "4" },
-    { img: "/img/portfolio1/slide6.png", id: "5" },
-    { img: "/img/portfolio1/slide7.png", id: "6" },
-    { img: "/img/portfolio1/slide8.png", id: "7" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide9.png`, id: "0" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide1.png`, id: "1" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide2.png`, id: "2" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide4.png`, id: "3" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide5.png`, id: "4" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide6.png`, id: "5" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide7.png`, id: "6" },
+    { img: `${import.meta.env.BASE_URL}img/portfolio1/slide8.png`, id: "7" },
   ];
 
   return (
