@@ -21,7 +21,7 @@ const Loader = ({ isLoading }) => {
         visibility: isLoading ? 'visible' : 'hidden',
       }}
     >
-      <img src="/img/itya-loading.gif" alt="Loading..." style={{ width: '50px', marginBottom: '10px' }} />
+      <img src={`${import.meta.env.BASE_URL}img/itya-loading.gif`} alt="Loading..." style={{ width: '50px', marginBottom: '10px' }} />
       <p style={{ fontWeight: 'bold' }}>Now Loading...</p>
     </div>
   );
