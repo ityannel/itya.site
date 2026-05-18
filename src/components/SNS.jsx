@@ -11,14 +11,13 @@ const SNS = () => {
       </div>
       
       <FadeIn>
-        {/* ↓ 中身はこのままでいい */}
         <a className="snss" href="https://x.com/1itya" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'black', marginBottom: '10px', fontSize: '18px', fontWeight: 'bold' }}>
-          <img src="/img/x.png" alt="X Icon" style={{ width: '30px', height: '30px' }} />
+          <img src={`${import.meta.env.BASE_URL}img/x.png`} alt="X Icon" style={{ width: '30px', height: '30px' }} />
           <span className="sns-id">@1itya</span>
         </a>
 
         <a className="snss" href="https://github.com/ityannel" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: 'black', marginBottom: '30px', fontSize: '18px', fontWeight: 'bold' }}>
-          <img src="/img/github.png" alt="GitHub Icon" style={{ width: '30px', height: '30px' }} />
+          <img src={`${import.meta.env.BASE_URL}img/github.png`} alt="GitHub Icon" style={{ width: '30px', height: '30px' }} />
           <span className="sns-id">ityannel</span>
         </a>
 
@@ -28,8 +27,6 @@ const SNS = () => {
         }}>
           {t('sns.back')}
         </a>
-        
-        {/* ここにあった </div> を消せ！！邪魔だ！！ */}
       
       </FadeIn>
     </div>
