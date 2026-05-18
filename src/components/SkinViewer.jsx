@@ -13,10 +13,10 @@ const SkinViewer = () => {
     if (!canvasRef.current) return;
 
     const skins = [
-      "/img/itya-skin.png",
-      "/img/itya-sunglass.png",
-      "/img/itya-colorful.png",
-      "/img/itya-skin-hanten.png"
+      `${import.meta.env.BASE_URL}img/itya-skin.png`,
+      `${import.meta.env.BASE_URL}img/itya-sunglass.png`,
+      `${import.meta.env.BASE_URL}img/itya-colorful.png`,
+      `${import.meta.env.BASE_URL}img/itya-skin-hanten.png`
     ];
 
     const animations = [
