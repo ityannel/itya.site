@@ -377,7 +377,7 @@ function handleUtterance(raw, confidence, typed) {
 function setVoiceUI() {
         const btn = document.getElementById("translator-button");
         if (!btn) return;
-        btn.title = voiceWanted ? "声の翻訳：オン（押すとオフ）" : "声の翻訳：オフ（押すとオン）  [Tで文字入力]";
+        btn.title = (voiceWanted ? "声の翻訳：オン（押すとオフ）" : "声の翻訳：オフ（押すとオン）") + "  [Tで文字入力]  ※声はChromeの音声認識（Google）で処理されます";
         const dot = document.getElementById("voice-dot");
         if (dot) dot.style.display = voiceWanted ? "block" : "none";
 }
@@ -428,12 +428,10 @@ function stopVoice() {
         setVoiceUI();
 }
 
+// no on-screen text when toggling: the red dot on the icon is the only indicator
 function toggleVoice() {
-        if (voiceWanted) { stopVoice(); showNote("声の翻訳をオフにしました"); }
-        else {
-                startVoice();
-                showNote("聞いています（声はChromeで処理されます）");
-        }
+        if (voiceWanted) stopVoice();
+        else startVoice();
 }
 
 // ----- tiny typed fallback (T key) -----

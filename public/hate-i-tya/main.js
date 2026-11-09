@@ -48,7 +48,7 @@ function startIdleWatch() {
                 el.style.cursor = "pointer";
                 el.style.fontSize = "18px";
                 el.style.lineHeight = "2";
-                el.innerHTML = "Yu un ten?<br>(まだ遊んでいますか？ クリックで続けます)";
+                el.textContent = "まだ遊んでいますか？ クリックで続けます";
                 idleResetTimer = setTimeout(() => location.reload(), IDLE_RESET_MS);
         };
         const reset = () => {
