@@ -1232,7 +1232,7 @@ function showWordBook(){
                         img.src = item.img;
                         Object.assign(img.style, {
                                 width: "100%",
-                                height: "75%",
+                                height: "62%",
                                 objectFit: "cover",
                                 borderRadius: "5px",
                                 marginBottom: "auto",
@@ -1245,12 +1245,26 @@ function showWordBook(){
                                 fontSize: "16px",
                                 margin: "0",
                                 textAlign: "center",
-                                paddingTop: "10px",
-                                height: "25%",
+                                paddingTop: "6px",
                         });
+
+                        const meaningText = document.createElement("p");
+                        Object.assign(meaningText.style, {
+                                color: "rgba(255,255,255,0.8)",
+                                fontFamily: "'DotGothic16', system-ui",
+                                fontSize: "12px",
+                                margin: "4px 0 0",
+                                textAlign: "center",
+                                lineHeight: "1.4",
+                                overflow: "hidden",
+                        });
+                        if (typeof lookupWordMeaning === "function") {
+                                lookupWordMeaning(item.word).then(m => { if (m) meaningText.textContent = m; });
+                        }
 
                         entry.appendChild(img);
                         entry.appendChild(wordText);
+                        entry.appendChild(meaningText);
                         listContainer.appendChild(entry);
                 });
 
@@ -1503,6 +1517,7 @@ let spacePressCount =0;
 let spacePressTimer = null;
 
 window.addEventListener('keydown', (event) => {
+        if (document.getElementById("translator-overlay")) return;
         if (event.code === 'Space') {
                 event.preventDefault();
 
@@ -1571,6 +1586,7 @@ resizeHandle();
 window.addEventListener("resize", resizeHandle);
 
 window.addEventListener('keydown', (e) => {
+        if (document.getElementById("translator-overlay")) return;
         const key = e.key.toLowerCase();
         keyPressed[key] = true;
 

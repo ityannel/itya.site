@@ -106,6 +106,9 @@ function showStartScreen() {
 }
 
 async function init(){
+        // wake the dictionary server up while assets load (it may be asleep)
+        if (typeof warmUpDictionary === "function") warmUpDictionary();
+
         // loading screen with progress
         const loading = makeOverlay("loading-overlay");
         loading.style.fontSize = "20px";
@@ -220,6 +223,7 @@ async function init(){
 
         loop();
         startIdleWatch();
+        if (typeof initTranslator === "function") initTranslator();
 }
 
 
