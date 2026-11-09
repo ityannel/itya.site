@@ -1517,7 +1517,7 @@ let spacePressCount =0;
 let spacePressTimer = null;
 
 window.addEventListener('keydown', (event) => {
-        if (document.getElementById("translator-overlay")) return;
+        if (typeof isTranslatorTyping === "function" && isTranslatorTyping()) return;
         if (event.code === 'Space') {
                 event.preventDefault();
 
@@ -1586,7 +1586,7 @@ resizeHandle();
 window.addEventListener("resize", resizeHandle);
 
 window.addEventListener('keydown', (e) => {
-        if (document.getElementById("translator-overlay")) return;
+        if (typeof isTranslatorTyping === "function" && isTranslatorTyping()) return;
         const key = e.key.toLowerCase();
         keyPressed[key] = true;
 
