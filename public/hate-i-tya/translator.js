@@ -78,7 +78,9 @@ const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 let voiceWanted = false;
 let recognition = null;
 let restartTimer = null;
-let quickEnds = 0;
+let restartPending = false;   // a delayed restart is scheduled (so the scene watcher must not restart it early)
+let failStreak = 0;
+const DEBUG_VOICE = (() => { try { return new URLSearchParams(location.search).get("debug") === "1"; } catch (e) { return false; } })();
 let startedAt = 0;
 let npcCount = 0;
 let lastUtter = "";
@@ -277,30 +279,37 @@ function startVoice() {
         r.lang = "ja-JP"; r.continuous = true; r.interimResults = false;
         startedAt = Date.now();
         r.onresult = (ev) => {
+                failStreak = 0;   // it is hearing us: not a failure
                 for (let i = ev.resultIndex; i < ev.results.length; i++) {
                         const res = ev.results[i];
                         if (res.isFinal) handleUtterance(res[0].transcript, res[0].confidence, false);
                 }
         };
+        let lastErr = null;
+        const fatal = () => {
+                voiceWanted = false; setVoiceUI();
+                try { localStorage.removeItem(VOICE_KEY); } catch (e) {}
+                if (!DEBUG_VOICE) showNote("×");
+                toggleTypedBar(true);
+        };
         r.onerror = (ev) => {
-                if (["not-allowed", "service-not-allowed", "audio-capture"].includes(ev.error)) {
-                        voiceWanted = false; setVoiceUI();
-                        try { localStorage.removeItem(VOICE_KEY); } catch (e) {}
-                        showNote("×");
-                        toggleTypedBar(true);
-                }
+                lastErr = ev.error;
+                console.warn("[voice] recognition error:", ev.error);
+                if (DEBUG_VOICE) showNote(String(ev.error));   // developer aid: ?debug=1 shows the browser's error code
+                // permission / device problems will not fix themselves: stop and fall back to typing
+                if (["not-allowed", "service-not-allowed", "audio-capture"].includes(ev.error)) fatal();
         };
         r.onend = () => {
                 recognition = null;
                 if (!voiceWanted) return;
-                quickEnds = (Date.now() - startedAt < 1500) ? quickEnds + 1 : 0;
-                if (quickEnds >= 5) {             // keeps failing: stop instead of looping forever
-                        voiceWanted = false; setVoiceUI();
-                        showNote("×");
-                        toggleTypedBar(true);
-                        return;
-                }
-                restartTimer = setTimeout(startVoice, Math.min(10000, 300 * Math.pow(2, quickEnds)));
+                const quick = Date.now() - startedAt < 1500;
+                // silence ("no-speech") and our own aborts are normal; a network error or an instant end is a failure
+                if (lastErr === "no-speech" || lastErr === "aborted") failStreak = 0;
+                else if (lastErr === "network" || quick) failStreak++;
+                else failStreak = 0;
+                if (failStreak >= 3) { fatal(); return; }          // keeps failing: stop instead of looping forever
+                restartPending = true;
+                restartTimer = setTimeout(() => { restartPending = false; startVoice(); }, failStreak ? 700 * failStreak : 150);
         };
         recognition = r;
         try { r.start(); } catch (e) { recognition = null; }
@@ -308,13 +317,13 @@ function startVoice() {
 
 // close the microphone but remember that the player wants voice (it reopens in the next talk scene)
 function pauseListening() {
-        clearTimeout(restartTimer);
+        clearTimeout(restartTimer); restartPending = false;
         const r = recognition; recognition = null;
         if (r) { r.onresult = r.onerror = r.onend = null; try { r.abort(); } catch (e) {} }
 }
 
 function stopVoice() {
-        voiceWanted = false; clearTimeout(restartTimer);
+        voiceWanted = false; clearTimeout(restartTimer); restartPending = false; failStreak = 0;
         try { localStorage.removeItem(VOICE_KEY); } catch (e) {}
         const r = recognition; recognition = null;
         if (r) { r.onresult = r.onerror = r.onend = null; try { r.abort(); } catch (e) {} }
@@ -365,7 +374,7 @@ function syncVoiceUI() {
                 pauseListening();
                 removeEl("typed-bar");
                 if (busy) { clearVoiceLines(); revertExpression(); }
-        } else if (voiceWanted && !recognition) {
+        } else if (voiceWanted && !recognition && !restartPending) {
                 startVoice();   // came back to a talk scene: reopen the mic by itself
         }
 }
