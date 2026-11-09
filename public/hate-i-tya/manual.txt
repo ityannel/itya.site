@@ -1,23 +1,23 @@
 このマニュアルでは、言語学習ゲーム「Hate i-tya?」の操作方法をご紹介します！
-Pono und Uuno tend "Hate i-tya?"
+Sa sisutuma aputa, sa mityu kaku yala haka.
 
 画面の左下に注目してください。
-Zino sio und suo.
+Pa yali sa wanuka pwa-kya su, sita-kya su. Pulisi.
 
 三角形があります。
-Hate butuno un tame?
+Lu-huku-taka ani.
 
 これが出ている間、クリックしてストーリーを進めることができます。
-Ge un und yu pon und tend sulanyao.
+Sa ana myu su, pa luma kuki taku apani.
 
 また、進めていく間にクイズが現れます。
-Und sunya-iesunya un i.
+Apani myu, kuta ina.
 
 正解を見つけてください。
-Zin yanya.
+Pa kuta hata pulisi.
 
 単語帳は、一回目のクイズの後から現れます。
-B un saozip ba sunya-iesunya.
+Kaka, wana tasuti mwa mu, ana nu.
 
 クリックして、今まで覚えた単語を見ましょう。
-Pon, zin biyo ietend yu shin.
+Pa akusasi titata haka, pa hati titata lu-taka kyu.

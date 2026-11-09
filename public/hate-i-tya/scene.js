@@ -62,7 +62,7 @@ const scenes = [
                 bg: 1002,
                 char: [{char:"mc"},
                         { char: "te"}],
-                text: { content: "Hate yu un sunya?", char: "te"},
+                text: { content: "Pa a i nyu?", char: "te"},
                 action: () => {}
         },
         {
@@ -142,7 +142,7 @@ const scenes = [
                 bg: 1003,
                 char: [{char:"mc", img: 0},
                         {char:"te"}],
-                text: {content: "Ge un hapo!", char: "te"},
+                text: {content: "Sa ya hapo kaka nu!", char: "te"},
                 action: () => {}
         },
         {
@@ -187,7 +187,7 @@ const scenes = [
                 bg: 1003,
                 char: [{char:"mc"},
                         {char:"te"}],
-                text: {content: 'Yu shin "hapo".', char: "te"},
+                text: {content: 'Pa hapo hati.', char: "te"},
                 action: () => {}
         },
         {
@@ -195,7 +195,7 @@ const scenes = [
                 bg: 1003,
                 char: [{char:"mc"},
                         {char:"te", img: "5"}],
-                text: {content: "Mi ieshin hate yu un hoo...?", char: "te"},
+                text: {content: "Pa a hata ma hu.", char: "te"},
                 action: () => {}
         },
         {
@@ -266,7 +266,7 @@ const scenes = [
                 bg: 1003,
                 char: [{char:"mc"},
                         {char:"te", img:"5"}],
-                text: {content: "Ba, mokun.", char:"te"},
+                text: {content: "Pa pata pati.", char:"te"},
                 action: () => {}
         },
         {
@@ -274,7 +274,7 @@ const scenes = [
                 bg: 1003,
                 char: [{char:"mc"},
                         {char:"te", img:"5"}],
-                text: {content: "Ten mokuno und mokun!", char:"te"},
+                text: {content: "Sa mokuno anu, pa pati haki!", char:"te"},
                 action: () => {}
         },
         {
@@ -284,7 +284,7 @@ const scenes = [
                         {char: "mc"},
                         {char:"te", img: "7"}
                 ],
-                text: {content: "Aisklitt...mokun aisklitt", char: "te"},
+                text: {content: "Hukapata, hukapata pati.", char: "te"},
                 action: () => {}
         },
         {
@@ -294,7 +294,7 @@ const scenes = [
                         {char: "mc"},
                         {char:"te", img: "6"}
                 ],
-                text: {content: "Ge un yanya😁", char: "te"},
+                text: {content: "Sa utyi!😁", char: "te"},
                 action: () => {}
         },
         {
@@ -306,9 +306,9 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "ten...",
+                                question: "Hukapata...",
                                 options: [
-                                        {text: "aisklitt", correct: true},
+                                        {text: "ani", correct: true},
                                         {text: "hapo", correct: false},
                                         {text: "oi!", correct: false}
                                 ],
@@ -330,7 +330,7 @@ const scenes = [
                         {char: "mc", img: "2"},
                         {char:"te", img:"5"}
                 ],
-                text: {content: "Ten aisklitt!"},
+                text: {content: "Hukapata ani!"},
                 clickable: false,
                 action: () => {
                         setTimeout(() => {
@@ -355,7 +355,7 @@ const scenes = [
                         {char: "mc", img: "0"},
                         {char:"te", img:"5"}
                 ],
-                text: {content: "Zipo, ten aisklitt...!", char:"te"},
+                text: {content: "Zipo, ten hukapata...!", char:"te"},
                 action: () => {
                         mission0 = "issued";
                         playSound(20);
@@ -382,7 +382,7 @@ const scenes = [
                 char:[
                         {char: "mc", img:"3"}
                 ],
-                text: {content: "(mi, ten, aisklitt...)"},
+                text: {content: "(mi, ten, hukapata...)"},
                 action: () => {
                 }
         },
@@ -472,7 +472,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img: "15"}
                 ],
-                text: {content: "Ba, hate yu mokun haa?", char: "cf"},
+                text: {content: "Pa a pati nyu syu, wa sa.", char: "cf"},
                 action: () => {}
         },
         {
@@ -484,10 +484,10 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "mokun...",
+                                question: "Ma pati...",
                                 options: [
-                                        {text: "aisklitt", correct: true},
-                                        {text: "haksuitt", correct: false},
+                                        {text: "hukapata", correct: true},
+                                        {text: "kuna", correct: false},
                                         {text: "mokuno", correct: false}
                                 ],
                                 onAnswer: (correct) => {
@@ -507,7 +507,7 @@ const scenes = [
                 char:[
                         {char: "mc", img: "2"},{char:"cf", img: "10"}
                 ],
-                text: {content: "Mi mokun aisklitt!!"},
+                text: {content: "Ma pati hukapata!!"},
                 action: () => {}
         },
         {
@@ -516,7 +516,7 @@ const scenes = [
                 char:[
                         {char: "mc", img: "0"},{char:"cf", img: "9"}
                 ],
-                text: {content: "Aisklitt..😂", char: "cf"},
+                text: {content: "Hukapata..😂", char: "cf"},
                 action: () => {}
         },
         {
@@ -589,7 +589,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf"}
                 ],
-                text: {content:"Aisklitt! Mokun!", char:"cf"},
+                text: {content:"Hukapata! Pa pati!", char:"cf"},
                 action: () => {
                 }
         },
@@ -602,7 +602,7 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Aisklitt",
+                                question: "Hukapata",
                                 options: [
                                         {img: "images/Ramett.jpg", correct: false},
                                         {img: "images/Aisklitt.jpg", correct: true},
@@ -611,7 +611,7 @@ const scenes = [
                                 onAnswer: (correct) => {
                                         if(correct) {
                                                 answerCorrect({
-                                                        word: "aisklitt",
+                                                        word: "hukapata",
                                                         img: "images/Aisklitt.jpg"
                                                 });
                                                 setTimeout(() => {
@@ -630,7 +630,7 @@ const scenes = [
                         {char: "mc", img:"4"},{char:"cf", img:"8"}
                 ],
                 clickable: false,
-                text: {content:"Oi! Aisklitt!"},
+                text: {content:"Oi! Hukapata!"},
                 action: () => {
                         setTimeout(() => nextScene(), 2000);
                 }
@@ -661,7 +661,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf"}
                 ],
-                text: {content: "Bi, tiyao.", char:"cf"},
+                text: {content: "Bi, kuna.", char:"cf"},
                 action: () => {
                 }
         },
@@ -685,7 +685,7 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Tiyao",
+                                question: "Kuna",
                                 options: [
                                         {img: "images/pikano.jpg", correct: false},
                                         {img: "images/Yanya.jpg", correct: false},
@@ -694,7 +694,7 @@ const scenes = [
                                 onAnswer: (correct) => {
                                         if(correct) {
                                                 answerCorrect({
-                                                        word: "tiyao",
+                                                        word: "kuna",
                                                         img: "images/tiyao.jpg"
                                                 });
                                                 setTimeout(() => {
@@ -711,7 +711,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:"10"}
                 ],
-                text: {content: "Tiyao, tiyao!", char: "cf"},
+                text: {content: "Kuna, kuna!", char: "cf"},
                 action: () => {
                         mission1 = "issued";
                         playSound(20);
@@ -728,7 +728,7 @@ const scenes = [
                         showQuiz({
                                 question: "petan...",
                                 options: [
-                                        {text: "Ieoi! Mi iepon yu tiyao", correct: false},
+                                        {text: "Ieoi! Mi iepon yu kuna", correct: false},
                                         {text: "o, oi😥", correct: true},
                                         {text: "Kurosie", correct: false}
                                 ],
@@ -802,7 +802,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char: "te", img:"7"}
                 ],
-                text: {content: "Ba, mokun aisklitt!", char:"te"},
+                text: {content: "Pa hukapatu pati!", char:"te"},
                 action: () => {
                 }
         },
@@ -861,7 +861,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char: "te", img:"5"}
                 ],
-                text: {content: "Ten mokuno?", char:"te"},
+                text: {content: "Mokuno ani nyu?", char:"te"},
                 action: () => {
                 }
         },
@@ -874,7 +874,7 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Ten mokuno?",
+                                question: "Mokuno ani nyu?",
                                 options: [
                                         {text: "Ieoi!", correct: false},
                                         {text: "Oi!", correct: true},
@@ -896,7 +896,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char: "te", img:"6"}
                 ],
-                text: {content: "Yanya!", char:"te"},
+                text: {content: "Kahatu aya.", char:"te"},
                 action: () => {
                 }
         },
@@ -921,8 +921,8 @@ const scenes = [
                         showQuiz({
                                 question: "Hate hee?",
                                 options: [
-                                        {text: "Aisklitt!", correct: false},
-                                        {text: "Tiyao!", correct: true},
+                                        {text: "Hukapata!", correct: false},
+                                        {text: "Kuna!", correct: true},
                                         {text: "Mokuno!", correct: false},
                                 ],
                                 onAnswer: (correct) => {
@@ -942,7 +942,7 @@ const scenes = [
                 char:[
                         {char: "mc", img: "3"},{char: "te", img:"7"}
                 ],
-                text: {content: "Tiyao!!!",},
+                text: {content: "Kuna!!!",},
                 action: () => {
                 }
         },
@@ -952,7 +952,7 @@ const scenes = [
                 char:[
                         {char: "mc", img: "0"},{char: "te", img:"6"}
                 ],
-                text: {content: "Mi ieshin ten tiyao, oi-oi!", char:"te"},
+                text: {content: "Mi ieshin ten kuna, oi-oi!", char:"te"},
                 action: () => {
                 }
         },
@@ -974,7 +974,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char: "te", img:"7"}
                 ],
-                text: {content: "Bi, ten mokuno und ten tiyao ge!", char:"te"},
+                text: {content: "Bi, ten mokuno und ten kuna ge!", char:"te"},
                 clickable: false,
                 action: () => {
                         setTimeout(() => {
@@ -1011,7 +1011,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:"10"}
                 ],
-                text: {content: "Tiyao, tiyao!", char: "cf"},
+                text: {content: "Kuna, kuna!", char: "cf"},
                 action: () => {
                 }
         },
@@ -1021,7 +1021,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:"10"}
                 ],
-                text: {content: "Ten tiyao?", char: "cf"},
+                text: {content: "Pa kuna ani nyu?", char: "cf"},
                 action: () => {
                 }
         },
@@ -1034,7 +1034,7 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Hate ten tiyao?",
+                                question: "Pa kuna ani nyu?",
                                 options: [
                                         {text: "Oi", correct: false},
                                         {text: "Ieoi...", correct: true},
@@ -1056,7 +1056,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:"20"}
                 ],
-                text: {content: "Hate????? Tiyao!!! Tiyao, tiyao!!!!!", char: "cf"},
+                text: {content: "Hate????? Kuna!!! Kuna, kuna!!!!!", char: "cf"},
                 action: () => {
                 }
         },
@@ -1100,7 +1100,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:"10"}
                 ],
-                text: {content: "Tiyao, tiyao!", char: "cf"},
+                text: {content: "Kuna, kuna!", char: "cf"},
                 action: () => {
                 }
         },
@@ -1110,7 +1110,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:"8"}
                 ],
-                text: {content: "Bi, bi, ten tiyao, tame?", char: "cf"},
+                text: {content: "Bi, bi, ten kuna, tame?", char: "cf"},
                 action: () => {
                 }
         },
@@ -1123,7 +1123,7 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Hate ten tiyao?",
+                                question: "Pa kuna ani nyu?",
                                 options: [
                                         {text: "Oi!", correct: true},
                                         {text: "Ieoi", correct: false},
@@ -1167,7 +1167,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img: "9"}
                 ],
-                text: {content: "Ba, ten mi tiyao!"},
+                text: {content: "Ba, ten mi kuna!"},
                 action: () => {
                         setTimeout(() => {
                                 haveTiyao = false;
@@ -1214,7 +1214,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf"},{char: "te", img: 5}
                 ],
-                text: {content: "Hate mokun yu?", char: "te"},
+                text: {content: "Pa a pati nyu?", char: "te"},
                 action: () => {
                 }
         },
@@ -1228,7 +1228,7 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Hate mokun ge?",
+                                question: "Pa pati sa nyu?",
                                 options: [
                                         {text: "Oi!", correct: true},
                                         {text: "Ieoi", correct: false},
@@ -1345,7 +1345,7 @@ const scenes = [
                         {char: "mc"},{char:"cf", img:10, xP : 40, yP:35},{char: "te"}
                 ],
                 clickable: false,
-                text: {content: "Shabatt, Ramett, und Aiskitt!", char: "cf"},
+                text: {content: "Shabatt, Ramett, und Hukapata!", char: "cf"},
                 action: () => {
                         setTimeout(() => nextScene(), 3000)
                 }
@@ -1356,7 +1356,7 @@ const scenes = [
                 char:[
                         {char: "mc"},{char:"cf", img:10, xP : 40, yP:35},{char: "te", img: 5}
                 ],
-                text: {content: "Mokun!", char: "te"},
+                text: {content: "Pa pati pulisu.", char: "te"},
                 action: () => {
                 }
         },
@@ -1493,7 +1493,7 @@ const scenes = [
         //         char:[
         //                 {char: "mc"},{char: "te", img:"7"}
         //         ],
-        //         text: {content: "Bi, ten mokuno und ten tiyao ge!", char:"te"},
+        //         text: {content: "Bi, ten mokuno und ten kuna ge!", char:"te"},
         //         clickable: false,
         //         action: () => {
         //                 setTimeout(() => {
@@ -1842,22 +1842,26 @@ const scenes = [
                         showQuiz({
                                 mode: "craft",
                                 question: "",
-                                vocabulary: ["mi", "yu", "sulanya", "mokun", "aisklitt", "tiyao", "yanya", "mokuno", "hapo", "Ba", "bono"],
+                                vocabulary: ["ma", "pa", "na", "pati", "hukapata", "kuna", "ani", "hapo", "mokuno", "su", "suya", "hu", "nyu"],
                                 correctAnswers: [
-                                        "mi mokun aisklitt",
-                                        "yu mokun aisklitt",
-                                        "sulanya mokun aisklitt",
-                                        "mi ten tiyao bono",
-                                        "sulanya ten tiyao mi",
-                                        "Ba mi mokun aisklitt",
-                                        "mi ten hapo",
-                                        "sulanya ten hapo",
-                                        "mi ten mokuno",
-                                        "sulanya ten mokuno",
-                                        "yu ten mokuno",
-                                        "sulanya yanya",
-                                        "mi yanya",
-                                        "yu yanya",
+                                        "ma pati hukapata",
+                                        "ma hukapata pati",
+                                        "ma kuna ani",
+                                        "ma hapo su ani",
+                                        "ma mokuno su ani",
+                                        "ma suya ani",
+                                        "pa pati hukapata",
+                                        "pa hukapata pati",
+                                        "pa kuna ani",
+                                        "pa hapo su ani",
+                                        "pa mokuno su ani",
+                                        "pa suya ani",
+                                        "na pati hukapata",
+                                        "na hukapata pati",
+                                        "na kuna ani",
+                                        "na hapo su ani",
+                                        "na mokuno su ani",
+                                        "na suya ani",
                                 ],
                                 onAnswer: (isCorrect) => {
                                         if (isCorrect) {
@@ -1884,7 +1888,7 @@ const scenes = [
                 char:[
                         {char: "mc", img: "0"},
                         {char: "god"},],
-                text: {content: "Yanya.", char: "god"},
+                text: {content: "Suka.", char: "god"},
                 action: () => {}
         },
         {

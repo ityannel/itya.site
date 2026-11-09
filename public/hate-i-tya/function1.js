@@ -149,6 +149,14 @@ function drawStory() {
 
                 const content = currentScene.text.content ?? "";
 
+                // long lines (dictionary words are longer) shrink to fit, keeping clear of the arrow
+                const maxTextWidth = canvas.width * 0.72;
+                const fullWidth = context.measureText(content).width;
+                if (fullWidth > maxTextWidth) {
+                        const baseSize = currentScene.text.size ?? canvas.height * 0.05;
+                        context.font = `${currentScene.text.weight ?? 400} ${baseSize * maxTextWidth / fullWidth}px ${currentScene.text.font ?? "'Press Start 2P', 'DotGothic16', system-ui"}`;
+                }
+
                 const textX = canvas.width / 2;
                 const textY = canvas.height * 0.9;
                 const welcometo = "Welcome aboard the Japan Airline's fl"
@@ -1211,7 +1219,7 @@ function showWordBook(){
 
         if(wordbookData.length === 0) {
                 const emptyMessage = document.createElement("p");
-                emptyMessage.innerText = "Ie petao...";
+                emptyMessage.innerText = "Titata titu ana hu tita.";
                 Object.assign(emptyMessage.style, {color: "rgba(255,255,255,0.3)", textAlign: "center", paddingTop: "50px"});
                 listContainer.appendChild(emptyMessage);
         } else {
