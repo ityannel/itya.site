@@ -36,8 +36,9 @@ function makeOverlay(id) {
 }
 
 // ---------- idle reset (for unattended open-campus booths) ----------
-const IDLE_WARN_MS = 150 * 1000;   // ask "still there?" after 2.5 min without input
-const IDLE_RESET_MS = 15 * 1000;   // go back to the start if nobody answers
+// demo mode (?demo=1, see demo.js) resets sooner so the next visitor starts from the beginning
+const IDLE_WARN_MS = (window.DEMO_MODE ? 45 : 150) * 1000;   // ask "still there?" after this long without input
+const IDLE_RESET_MS = (window.DEMO_MODE ? 12 : 15) * 1000;   // go back to the start if nobody answers
 let idleWarnTimer = null;
 let idleResetTimer = null;
 
@@ -64,7 +65,8 @@ function startIdleWatch() {
 
 async function init(){
         // wake the dictionary server up while assets load (it may be asleep)
-        if (typeof warmUpDictionary === "function") warmUpDictionary();
+        // (demo mode makes no server calls at all, so it also works without internet)
+        if (!window.DEMO_MODE && typeof warmUpDictionary === "function") warmUpDictionary();
 
         // loading screen with progress
         const loading = makeOverlay("loading-overlay");
@@ -177,7 +179,7 @@ async function init(){
 
         loop();
         startIdleWatch();
-        if (typeof initTranslator === "function") initTranslator();
+        if (!window.DEMO_MODE && typeof initTranslator === "function") initTranslator();   // no microphone in demo mode
 }
 
 

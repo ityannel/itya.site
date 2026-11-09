@@ -1,0 +1,51 @@
+<!DOCTYPE HTML>
+<html lang="ja">
+<head>
+  <title>Hate i-tya? — my i-tya</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    html, body { margin: 0; background: #0b0e24; color: #fff; font-family: 'Press Start 2P', 'DotGothic16', system-ui; }
+    body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+           gap: 20px; padding: 16px; box-sizing: border-box; }
+    #card { display: block; width: min(92vw, 520px); height: auto; border-radius: 14px; box-shadow: 0 0 40px rgba(255,211,90,.25); }
+    .row { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .btn { font-family: inherit; font-size: 14px; padding: 14px 18px; border-radius: 10px; border: 0; background: #2b3366; color: #fff;
+           text-decoration: none; cursor: pointer; }
+    .btn.main { background: #ffd35a; color: #000; }
+    #empty { display: none; text-align: center; line-height: 2; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <img id="card" alt="my i-tya card" style="display:none">
+  <div id="empty">Hate i-tya?</div>
+  <div class="row">
+    <a id="save" class="btn main" style="display:none" download="my-itya.png">&#11015; PNG</a>
+    <a class="btn" href="index.html">&#9654; Hate i-tya?</a>
+    <a class="btn" href="https://i-tya-dictionary.vercel.app">i-tya</a>
+  </div>
+  <script src="card.js"></script>
+  <script>
+    (async function () {
+      const data = ItyaCard.parseHash(location.hash);
+      if (!data.name) { document.getElementById('empty').style.display = 'block'; return; }
+      const load = (src) => new Promise((res) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+      const [bg, hero, teacher] = await Promise.all([
+        load('images/bgVillege.jpg'), load('images/mcNormal.png'), load('images/teNormal.png'),
+        // fonts: don't wait forever if Google Fonts is unreachable
+        Promise.race([Promise.all([document.fonts.load("16px 'Press Start 2P'"), document.fonts.load("16px 'DotGothic16'")]).catch(() => {}),
+                      new Promise(r => setTimeout(r, 2500))]),
+      ]);
+      const canvas = ItyaCard.draw(data, { bg, hero, teacher });
+      const url = canvas.toDataURL('image/png');
+      const img = document.getElementById('card');      // an <img> so a long-press can save it on phones
+      img.src = url; img.style.display = 'block';
+      const save = document.getElementById('save'); save.href = url; save.style.display = '';
+    })();
+  </script>
+</body>
+</html>
