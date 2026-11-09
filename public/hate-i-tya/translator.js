@@ -1,7 +1,8 @@
 // i-tya dictionary translator panel (talks to the i-tya-dictionary API).
 //  - Japanese -> i-tya (POST /api/translate with dryRun:true so nothing is saved)
 //  - i-tya -> Japanese (POST /api/reverse-translate)
-//  - voice input via the browser's SpeechRecognition (Chrome), text input as fallback
+//  - voice-first: one mic button; speak and it translates (Chrome SpeechRecognition),
+//    with a small keyboard fallback. Direction is auto-detected.
 //  - word meanings for the wordbook via GET /api/dictionary?search=...
 // All API text is inserted with textContent only.
 
@@ -100,8 +101,10 @@ async function lookupWordMeaning(word) {
         }
 }
 
-// ---------- panel UI ----------
-const TR_FONT = "'DotGothic16', 'Press Start 2P', system-ui";
+// ---------- panel UI (kept deliberately minimal: one mic button) ----------
+const TR_FONT_JA = "'DotGothic16', system-ui";
+const TR_FONT_PIXEL = "'Press Start 2P', system-ui";
+const MIC_SVG = `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
 
 function mk(tag, styles, text) {
         const el = document.createElement(tag);
@@ -110,220 +113,177 @@ function mk(tag, styles, text) {
         return el;
 }
 
-function isTypingTarget(t) {
-        return !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+// Japanese (or anything non-ASCII) -> i-tya;  plain latin letters -> Japanese
+function detectDirection(text) {
+        return /^[\x00-\x7F\s]+$/.test(text) ? "toJa" : "toItya";
 }
 
 function initTranslator() {
         if (document.getElementById("translator-button")) return;
         const btn = mk("button", {
-                position: "fixed", top: "10px", right: "10px", zIndex: "9000",
-                padding: "10px 14px", fontFamily: TR_FONT, fontSize: "16px", cursor: "pointer",
-                color: "white", backgroundColor: "rgba(0,0,0,0.65)", border: "2px solid white", borderRadius: "10px",
-        }, "翻訳");
+                position: "fixed", top: "10px", right: "10px", width: "50px", height: "50px", padding: "9px",
+                boxSizing: "border-box", cursor: "pointer", zIndex: "9000",
+                backgroundColor: "rgba(0,0,0,0.55)", border: "2px solid white", borderRadius: "10px",
+        });
         btn.id = "translator-button";
-        btn.title = "日本語とi-tya語を翻訳する";
+        btn.title = "話して翻訳";
+        btn.innerHTML = MIC_SVG;           // static SVG only, no API data
         btn.onclick = openTranslator;
         document.body.appendChild(btn);
 }
 
 function openTranslator() {
         if (document.getElementById("translator-overlay")) return;
-        let direction = "toItya";
 
         const overlay = mk("div", {
                 position: "fixed", top: "0", left: "0", width: "100%", height: "100%", zIndex: "15000",
-                backgroundColor: "rgba(0,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "16px", boxSizing: "border-box", fontFamily: TR_FONT, color: "white",
+                backgroundColor: "rgba(0,0,0,0.88)", display: "flex", flexDirection: "column",
+                alignItems: "center", justifyContent: "center", gap: "18px",
+                padding: "20px", boxSizing: "border-box", color: "white", textAlign: "center", fontFamily: TR_FONT_JA,
         });
         overlay.id = "translator-overlay";
 
-        const panel = mk("div", {
-                width: "100%", maxWidth: "640px", maxHeight: "100%", overflowY: "auto",
-                backgroundColor: "rgba(10,10,10,0.9)", border: "4px solid white", borderRadius: "14px",
-                padding: "20px", boxSizing: "border-box",
+        const heard = mk("div", { fontSize: "20px", minHeight: "28px", opacity: "0.8", maxWidth: "90%", wordBreak: "break-word" });
+        const result = mk("div", { fontSize: "clamp(22px, 4vw, 40px)", minHeight: "56px", maxWidth: "90%", lineHeight: "1.5", wordBreak: "break-word" });
+        const note = mk("div", { fontSize: "12px", opacity: "0.6", minHeight: "16px" });
+
+        const mic = mk("button", {
+                width: "96px", height: "96px", padding: "24px", boxSizing: "border-box", cursor: "pointer",
+                backgroundColor: "rgba(255,255,255,0.12)", border: "4px solid white", borderRadius: "50%",
+                transition: "background-color 0.2s",
         });
+        mic.innerHTML = MIC_SVG;
 
-        panel.appendChild(mk("div", { fontSize: "22px", marginBottom: "12px" }, "翻訳"));
-
-        // direction tabs
-        const tabs = mk("div", { display: "flex", gap: "8px", marginBottom: "12px" });
-        const tabStyle = (active) => ({
-                flex: "1", padding: "10px", fontFamily: TR_FONT, fontSize: "15px", cursor: "pointer",
-                color: active ? "#2c3e50" : "white", backgroundColor: active ? "#f1c40f" : "rgba(255,255,255,0.15)",
-                border: "none", borderRadius: "8px",
-        });
-        const tabA = mk("button", tabStyle(true), "日本語 → i-tya語");
-        const tabB = mk("button", tabStyle(false), "i-tya語 → 日本語");
-        tabs.append(tabA, tabB);
-        panel.appendChild(tabs);
-
-        const input = mk("textarea", {
-                width: "100%", height: "84px", boxSizing: "border-box", resize: "none",
-                fontFamily: TR_FONT, fontSize: "18px", padding: "10px", borderRadius: "8px",
-                border: "2px solid #888", backgroundColor: "white", color: "#222",
-        });
-        input.maxLength = TRANSLATE_MAX_CHARS;
-        input.placeholder = "言いたい言葉を入力（または🎤で話す）";
-        panel.appendChild(input);
-
-        const row = mk("div", { display: "flex", gap: "8px", marginTop: "10px", alignItems: "center", flexWrap: "wrap" });
-        const goBtn = mk("button", {
-                padding: "10px 22px", fontFamily: TR_FONT, fontSize: "18px", cursor: "pointer",
-                color: "white", backgroundColor: "#3498db", border: "none", borderRadius: "8px",
-        }, "翻訳する");
-        const micBtn = mk("button", {
-                padding: "10px 16px", fontFamily: TR_FONT, fontSize: "18px", cursor: "pointer",
-                color: "white", backgroundColor: "#c0392b", border: "none", borderRadius: "8px",
-        }, "🎤 話す");
-        const counter = mk("span", { marginLeft: "auto", fontSize: "13px", opacity: "0.7" }, "");
-        row.append(goBtn, micBtn, counter);
-        panel.appendChild(row);
-
-        const notice = mk("div", { marginTop: "8px", fontSize: "12px", opacity: "0.65", lineHeight: "1.6" },
-                "🎤は話した音声をChrome（Google）の音声認識に送ります。使いたくない場合は文字で入力してください。");
-        panel.appendChild(notice);
-
-        const status = mk("div", { marginTop: "14px", minHeight: "24px", fontSize: "15px", lineHeight: "1.7" });
-        panel.appendChild(status);
-        const resultBox = mk("div", { marginTop: "6px" });
-        panel.appendChild(resultBox);
-
+        const bottom = mk("div", { display: "flex", gap: "14px", alignItems: "center" });
+        const keyBtn = mk("button", {
+                width: "44px", height: "44px", cursor: "pointer", fontSize: "20px", color: "white",
+                backgroundColor: "rgba(255,255,255,0.12)", border: "2px solid white", borderRadius: "8px",
+        }, "⌨");
+        keyBtn.title = "文字で入力";
         const closeBtn = mk("button", {
-                display: "block", margin: "18px auto 0", padding: "10px 24px", fontFamily: TR_FONT, fontSize: "16px",
-                cursor: "pointer", color: "#2c3e50", backgroundColor: "#f1c40f", border: "none", borderRadius: "8px",
+                padding: "10px 22px", fontFamily: TR_FONT_PIXEL, fontSize: "16px", cursor: "pointer",
+                color: "#2c3e50", backgroundColor: "#f1c40f", border: "none", borderRadius: "5px",
         }, "ie");
-        panel.appendChild(closeBtn);
+        bottom.append(keyBtn, closeBtn);
 
-        overlay.appendChild(panel);
+        const typeRow = mk("div", { display: "none", width: "100%", maxWidth: "520px" });
+        const input = mk("input", {
+                width: "100%", boxSizing: "border-box", padding: "12px", fontFamily: TR_FONT_JA, fontSize: "20px",
+                borderRadius: "8px", border: "2px solid #888", backgroundColor: "white", color: "#222", textAlign: "center",
+        });
+        input.type = "text";
+        input.maxLength = TRANSLATE_MAX_CHARS;
+        input.placeholder = "日本語 / i-tya";
+        typeRow.appendChild(input);
+
+        overlay.append(heard, result, note, mic, typeRow, bottom);
         document.body.appendChild(overlay);
-        input.focus();
 
         // ----- helpers -----
         let recognition = null;
-        const stopMic = () => { try { recognition && recognition.stop(); } catch (e) {} recognition = null; };
-        const close = () => {
+        let gotSpeech = false;
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const stopMic = () => {           // silent stop (used when closing)
+                const r = recognition; recognition = null;
+                if (r) { r.onresult = r.onerror = r.onend = null; try { r.abort(); } catch (e) {} }
+                mic.style.backgroundColor = "rgba(255,255,255,0.12)";
+        };
+        const onKey = (e) => { if (e.key === "Escape") close(); };
+        function close() {
                 stopMic();
                 document.removeEventListener("keydown", onKey, true);
                 overlay.remove();
-        };
-        const onKey = (e) => { if (e.key === "Escape") close(); };
+        }
         document.addEventListener("keydown", onKey, true);
         closeBtn.onclick = close;
         overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
 
-        const setStatus = (msg, color) => { status.textContent = msg; status.style.color = color || "white"; };
-        const updateCounter = () => { counter.textContent = `残り ${Math.max(0, TRANSLATE_SESSION_LIMIT - translateCount)} 回`; };
-        updateCounter();
+        const showTyping = () => { typeRow.style.display = "block"; input.focus(); };
+        keyBtn.onclick = showTyping;
+        input.addEventListener("keydown", (e) => {
+                e.stopPropagation();
+                if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); submit(input.value); }
+        });
 
-        const setDirection = (d) => {
-                direction = d;
-                Object.assign(tabA.style, tabStyle(d === "toItya"));
-                Object.assign(tabB.style, tabStyle(d === "toJa"));
-                input.placeholder = d === "toItya" ? "言いたい言葉を入力（または🎤で話す）" : "i-tya語の文を入力";
-                micBtn.style.display = (d === "toItya" && SpeechRec) ? "" : "none";
-                notice.style.display = (d === "toItya" && SpeechRec) ? "" : "none";
-                resultBox.textContent = ""; setStatus("");
-        };
-        tabA.onclick = () => setDirection("toItya");
-        tabB.onclick = () => setDirection("toJa");
+        const say = (msg, color) => { note.textContent = msg; note.style.color = color || "white"; };
 
-        // ----- voice input (Chrome) -----
-        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRec) { micBtn.style.display = "none"; notice.style.display = "none"; }
-        micBtn.onclick = () => {
-                if (!SpeechRec) return;
-                if (recognition) { stopMic(); micBtn.textContent = "🎤 話す"; return; }
+        async function submit(raw) {
+                const text = String(raw || "").trim().slice(0, TRANSLATE_MAX_CHARS);
+                if (!text || translatorBusy) return;
+                if (translateCount >= TRANSLATE_SESSION_LIMIT) { say("たくさん使ってくれてありがとう。続きはまた後で。", "#ffd27f"); return; }
+                const wait = TRANSLATE_COOLDOWN_MS - (Date.now() - lastTranslateAt);
+                if (wait > 0) { say("少し待ってね", "#ffd27f"); return; }
+
+                const direction = detectDirection(text);
+                heard.textContent = text;
+                result.textContent = "...";
+                result.style.fontFamily = TR_FONT_PIXEL;
+                say("");
+                translatorBusy = true;
+                const r = await callTranslate(direction, text);
+                translatorBusy = false;
+                lastTranslateAt = Date.now();
+                if (!document.getElementById("translator-overlay")) return;   // closed meanwhile
+
+                if (r.ok) {
+                        translateCount++;
+                        result.style.fontFamily = direction === "toItya" ? TR_FONT_PIXEL : TR_FONT_JA;
+                        result.textContent = r.data.translation;
+                        const hasNew = direction === "toItya" && (r.data.breakdown || []).some(b => b.status === "new");
+                        say(hasNew ? "※ 辞書にまだない語の案を含みます" : "", "#f1c40f");
+                } else {
+                        result.textContent = "";
+                        const msgs = {
+                                limit: `混み合っています。${r.retryAfter} 秒ほど待ってね。`,
+                                overload: "混み合っています。少し待ってね。",
+                                empty: "うまく訳せませんでした。言い方を変えてみてね。",
+                                network: "辞書につながりません。ゲームはそのまま続けられます。",
+                        };
+                        say(msgs[r.kind] || msgs.network, "#ff9b9b");
+                }
+        }
+
+        // ----- voice: tap the mic, speak, it translates by itself -----
+        function listen() {
+                if (!SpeechRec) { say("このブラウザでは声が使えません。⌨で入力してね。"); showTyping(); return; }
+                if (recognition) { try { recognition.stop(); } catch (e) {} return; }   // tap again = "done talking"
                 recognition = new SpeechRec();
                 recognition.lang = "ja-JP";
                 recognition.interimResults = true;
-                recognition.maxAlternatives = 1;
                 recognition.continuous = false;
-                micBtn.textContent = "■ 止める";
-                setStatus("聞いています…話してください", "#9be7ff");
+                gotSpeech = false;
+                mic.style.backgroundColor = "#c0392b";
+                heard.textContent = "";
+                say("話してください", "#9be7ff");
+                let finalText = "";
                 recognition.onresult = (ev) => {
-                        let text = "";
-                        for (let i = 0; i < ev.results.length; i++) text += ev.results[i][0].transcript;
-                        input.value = text.slice(0, TRANSLATE_MAX_CHARS);
+                        let t = "";
+                        for (let i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+                        finalText = t; gotSpeech = true;
+                        heard.textContent = t;
                 };
                 recognition.onerror = (ev) => {
+                        if (ev.error === "aborted") return;
                         const msgs = {
-                                "not-allowed": "マイクが許可されていません。ブラウザのマイク設定を確認するか、文字で入力してください。",
-                                "service-not-allowed": "マイクが許可されていません。文字で入力してください。",
-                                "no-speech": "声が聞こえませんでした。もう一度試してください。",
-                                "audio-capture": "マイクが見つかりません。文字で入力してください。",
-                                "network": "音声認識に接続できません。文字で入力してください。",
+                                "not-allowed": "マイクが許可されていません。⌨で入力してね。",
+                                "service-not-allowed": "マイクが許可されていません。⌨で入力してね。",
+                                "audio-capture": "マイクが見つかりません。⌨で入力してね。",
+                                "no-speech": "聞こえませんでした。もう一度どうぞ。",
+                                "network": "音声認識につながりません。⌨で入力してね。",
                         };
-                        setStatus(msgs[ev.error] || "音声認識でエラーが出ました。文字で入力してください。", "#ff9b9b");
+                        say(msgs[ev.error] || "声がうまく聞けませんでした。⌨で入力してね。", "#ff9b9b");
+                        if (ev.error !== "no-speech") showTyping();
                 };
                 recognition.onend = () => {
                         recognition = null;
-                        micBtn.textContent = "🎤 話す";
-                        if (input.value.trim() && status.style.color !== "rgb(255, 155, 155)") {
-                                setStatus("「翻訳する」を押してください", "white");
-                        }
+                        mic.style.backgroundColor = "rgba(255,255,255,0.12)";
+                        if (gotSpeech && finalText.trim()) submit(finalText);
                 };
-                try { recognition.start(); } catch (e) { recognition = null; micBtn.textContent = "🎤 話す"; }
-        };
+                try { recognition.start(); } catch (e) { recognition = null; showTyping(); }
+        }
+        mic.onclick = listen;
 
-        // ----- translate -----
-        const render = (data) => {
-                resultBox.textContent = "";
-                const main = mk("div", {
-                        fontSize: "24px", padding: "12px", backgroundColor: "rgba(255,255,255,0.12)",
-                        borderRadius: "8px", marginBottom: "10px", wordBreak: "break-word",
-                }, data.translation);
-                resultBox.appendChild(main);
-                const items = Array.isArray(data.breakdown) ? data.breakdown : [];
-                items.forEach(it => {
-                        const left = direction === "toItya" ? it.japanese : it.itya;
-                        const right = direction === "toItya" ? it.itya : it.japanese;
-                        const meaning = direction === "toItya"
-                                ? [it.meaning_noun, it.meaning_verb].filter(Boolean)[0]
-                                : it.role;
-                        const line = mk("div", { fontSize: "14px", lineHeight: "1.7", padding: "6px 4px", borderBottom: "1px solid rgba(255,255,255,0.15)" });
-                        line.appendChild(mk("span", { opacity: "0.8" }, `${left ?? ""} → `));
-                        line.appendChild(mk("strong", { fontSize: "16px" }, `${right ?? ""}`));
-                        if (meaning) line.appendChild(mk("div", { fontSize: "12px", opacity: "0.65" }, meaning));
-                        if (direction === "toItya" && it.status === "new")
-                                line.appendChild(mk("div", { fontSize: "11px", color: "#f1c40f" }, "※ 辞書にまだない新しい語の案です（保存はされません）"));
-                        resultBox.appendChild(line);
-                });
-        };
-
-        const doTranslate = async () => {
-                if (translatorBusy) return;
-                const text = input.value.trim();
-                if (!text) { setStatus("言葉を入力してください", "#ffd27f"); return; }
-                if (translateCount >= TRANSLATE_SESSION_LIMIT) { setStatus("この端末での翻訳回数の上限に達しました。", "#ff9b9b"); return; }
-                const wait = TRANSLATE_COOLDOWN_MS - (Date.now() - lastTranslateAt);
-                if (wait > 0) { setStatus(`少し待ってね（あと ${Math.ceil(wait / 1000)} 秒）`, "#ffd27f"); return; }
-
-                translatorBusy = true; goBtn.disabled = true; goBtn.style.opacity = "0.5";
-                resultBox.textContent = "";
-                setStatus("翻訳中…（辞書サーバーが眠っていると、最初は1分ほどかかることがあります）", "#9be7ff");
-                const r = await callTranslate(direction, text);
-                translatorBusy = false; goBtn.disabled = false; goBtn.style.opacity = "1";
-                lastTranslateAt = Date.now();
-                if (!document.getElementById("translator-overlay")) return; // closed meanwhile
-
-                if (r.ok) {
-                        translateCount++; updateCounter();
-                        setStatus("");
-                        render(r.data);
-                } else if (r.kind === "limit") {
-                        setStatus(`混み合っています。${r.retryAfter} 秒ほど待ってからもう一度。`, "#ff9b9b");
-                } else if (r.kind === "overload") {
-                        setStatus("辞書が混み合っています。少し待ってからもう一度。", "#ff9b9b");
-                } else if (r.kind === "empty") {
-                        setStatus("うまく翻訳できませんでした。言い方を変えてみてください。", "#ff9b9b");
-                } else {
-                        setStatus("辞書に接続できませんでした。ゲームはそのまま続けられます。", "#ff9b9b");
-                }
-        };
-        goBtn.onclick = doTranslate;
-        input.addEventListener("keydown", (e) => {
-                e.stopPropagation(); // keep typing away from the game's key handlers
-                if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); doTranslate(); }
-        });
+        // first open: a tiny privacy note, then start listening right away
+        say(SpeechRec ? "声はChromeの音声認識（Google）で処理されます" : "", "rgba(255,255,255,0.6)");
+        listen();
 }
