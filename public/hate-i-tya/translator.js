@@ -1,9 +1,10 @@
-// Voice / translation helper for the game. Talks to the i-tya-dictionary backend, but only to its
-// game endpoints, which use the GAME's own vocabulary (not the dictionary site's i-tya):
-//  - Japanese -> game i-tya      POST /api/game-translate
-//  - game i-tya -> Japanese      POST /api/game-reverse
+// Voice / translation helper for the game. Talks to the i-tya-dictionary (Swa-iTya) backend's game
+// endpoints. Everything spoken or translated uses words that exist in the dictionary right now
+// ("Oi" is the one game word kept as is), so when the dictionary grows the game can say more.
+//  - Japanese -> i-tya           POST /api/game-translate
+//  - i-tya -> Japanese           POST /api/game-reverse
 //  - character reactions          POST /api/npc
-//  - word meanings (wordbook)     GET  /api/game-lexicon
+//  - labels for the game's own wordbook words   GET /api/game-lexicon
 //  - hands-free voice mode (Chrome SpeechRecognition) with a small typed fallback (T key)
 // All API text is inserted with textContent only.
 
@@ -332,7 +333,7 @@ function handleUtterance(raw, confidence, typed) {
                         el.__small.textContent = text;
                 } else {
                         const msgs = { limit: `混み合っています。${r.retryAfter} 秒ほど待ってね。`, overload: "混み合っています。少し待ってね。",
-                                empty: "うまく訳せませんでした。", nowords: "その言葉は、まだゲームにありません。", network: "辞書につながりません。ゲームは続けられます。" };
+                                empty: "うまく訳せませんでした。", nowords: "その言葉は、まだ辞書にありません。", network: "辞書につながりません。ゲームは続けられます。" };
                         removeBubble("player-bubble");
                         showNote(msgs[r.kind] || msgs.network);
                         return;
