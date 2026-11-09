@@ -183,7 +183,7 @@ const scenes = [
                 action: () => {}
         },
         {
-                scene: 15,
+                scene: 15, talk: true,
                 bg: 1003,
                 char: [{char:"mc"},
                         {char:"te"}],
@@ -511,7 +511,7 @@ const scenes = [
                 action: () => {}
         },
         {
-                scene:41,
+                scene:41, talk: true,
                 bg: 1005,
                 char:[
                         {char: "mc", img: "0"},{char:"cf", img: "9"}
@@ -797,7 +797,7 @@ const scenes = [
                 }
         },
         {
-                scene:60,
+                scene:60, talk: true,
                 bg: 1006,
                 char:[
                         {char: "mc"},{char: "te", img:"7"}
@@ -1245,7 +1245,7 @@ const scenes = [
                 }
         },
         {
-                scene:90,
+                scene:90, talk: true,
                 bg: 1005,
                 char:[
                         {char: "mc"},{char:"cf", img: 10},{char: "te", img: 6}
@@ -1351,7 +1351,7 @@ const scenes = [
                 }
         },
         {
-                scene:98,
+                scene:98, talk: true,
                 bg: 1007,
                 char:[
                         {char: "mc"},{char:"cf", img:10, xP : 40, yP:35},{char: "te", img: 5}
@@ -1871,7 +1871,7 @@ const scenes = [
                 action: () => {}
         },
         {
-                scene: 137,
+                scene: 137, talk: true,
                 bg: 1009,
                 char:[
                         {char: "mc", img: "0"},

@@ -46,9 +46,8 @@ function startIdleWatch() {
                 const el = makeOverlay("idle-overlay");
                 el.style.zIndex = "30000";
                 el.style.cursor = "pointer";
-                el.style.fontSize = "18px";
-                el.style.lineHeight = "2";
-                el.textContent = "まだ遊んでいますか？ クリックで続けます";
+                el.style.fontSize = "48px";
+                el.textContent = "Oi?";
                 idleResetTimer = setTimeout(() => location.reload(), IDLE_RESET_MS);
         };
         const reset = () => {

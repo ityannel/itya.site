@@ -4,7 +4,6 @@
 //  - Japanese -> i-tya           POST /api/game-translate
 //  - i-tya -> Japanese           POST /api/game-reverse
 //  - character reactions          POST /api/npc
-//  - labels for the game's own wordbook words   GET /api/game-lexicon
 //  - hands-free voice mode (Chrome SpeechRecognition) with a small typed fallback (T key)
 // All API text is inserted with textContent only.
 
@@ -52,29 +51,6 @@ async function callTranslate(direction, sentence) {
         }
 }
 
-// ---------- wordbook meanings (game vocabulary only) ----------
-let gameLexiconPromise = null;
-
-function loadGameLexicon() {
-        if (!gameLexiconPromise) {
-                gameLexiconPromise = fetch(`${DICT_API}/api/game-lexicon`)
-                        .then(r => (r.ok ? r.json() : null))
-                        .then(j => {
-                                if (!j || !Array.isArray(j.words)) throw new Error("bad lexicon");
-                                const map = {};
-                                j.words.forEach(w => { map[String(w.word).toLowerCase()] = w.ja; });
-                                return map;
-                        })
-                        .catch(() => { gameLexiconPromise = null; return null; });   // try again next time
-        }
-        return gameLexiconPromise;
-}
-
-async function lookupWordMeaning(word) {
-        const map = await loadGameLexicon();
-        return (map && map[String(word).toLowerCase()]) || null;
-}
-
 // ---------- hands-free voice mode ----------
 // Turn the mic on once; it keeps listening. Each phrase you say appears as a speech
 // bubble above your character (with its i-tya), and the character you are talking to
@@ -118,15 +94,16 @@ function mk(tag, styles, text) {
         return el;
 }
 
-// Japanese (or anything non-ASCII) -> i-tya;  plain latin letters -> Japanese
-function detectDirection(text) {
-        return /^[\x00-\x7F\s]+$/.test(text) ? "toJa" : "toItya";
-}
-
 // used by the game's key handlers: don't drive the game while typing here
 function isTranslatorTyping() {
         const a = document.activeElement;
         return !!a && a.id === "typed-input";
+}
+
+// The player can talk only in scenes the author flagged with  talk: true  in scene.js.
+// Everywhere else the mic icon is hidden and the microphone is OFF.
+function talkAllowed() {
+        return gameState === "story" && !!currentScene && currentScene.talk === true;
 }
 
 function inQuiz() { return !!document.getElementById("quiz-container"); }
@@ -144,7 +121,7 @@ function removeBubble(id) {
 }
 
 // big = main line (i-tya), small = Japanese. who: mc | te | cf | god
-function buildBubble(id, big, small, who) {
+function buildBubble(id, big, who) {
         removeBubble(id);
         const { rect } = canvasScale();
         const color = CHAR_COLORS[who] || "#000";
@@ -156,13 +133,12 @@ function buildBubble(id, big, small, who) {
         });
         el.id = id;
         const bigEl = mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(9, rect.height * 0.027)}px`, lineHeight: "1.45", color, wordBreak: "break-word" }, big);
-        const smallEl = mk("div", { fontFamily: TR_FONT_JA, fontSize: `${Math.max(10, rect.height * 0.024)}px`, color: "#555", marginTop: "2px", lineHeight: "1.3", wordBreak: "break-word" }, small);
         const tail = mk("div", { position: "absolute", bottom: "-9px", width: "14px", height: "14px", backgroundColor: "#fff",
                 borderRight: "3px solid #000", borderBottom: "3px solid #000", transform: "rotate(45deg)" });
         tail.className = "bubble-tail";
-        el.append(bigEl, smallEl, tail);
+        el.append(bigEl, tail);
         document.body.appendChild(el);
-        el.__big = bigEl; el.__small = smallEl; el.__who = who;
+        el.__big = bigEl; el.__who = who;
         bubbleTimers[id] = setTimeout(() => removeBubble(id), 9000);
         return el;
 }
@@ -170,8 +146,11 @@ function buildBubble(id, big, small, who) {
 function charBox(who) {
         const c = currentChars.find(x => x.char === who);
         const { rect, k } = canvasScale();
-        if (c && imageState[c.img] && imageState[c.img].w) {
-                const st = imageState[c.img];
+        // while an expression swap is running, measure the character by its original picture
+        // (the swapped picture has no size yet during its first frame)
+        const id = (c && reaction && reaction.c === c) ? reaction.prevImg : (c && c.img);
+        if (c && imageState[id] && imageState[id].w) {
+                const st = imageState[id];
                 return { cx: rect.left + (st.x + st.w / 2) * k, top: rect.top + st.y * k, bottom: rect.top + (st.y + st.h) * k };
         }
         return null;
@@ -221,19 +200,19 @@ function placeBubble(el, who, opts) {
         el.style.visibility = "visible";
 }
 
-// small notice (errors, hints): same box, top centre of the frame
-function showNote(msg) {
+// small notice: symbols only, no words ("?" = could not say it, "…" = busy, "×" = microphone unavailable)
+function showNote(symbol) {
         const { rect } = canvasScale();
         removeBubble("voice-note");
         const el = mk("div", {
                 position: "fixed", left: `${rect.left + rect.width / 2}px`, top: `${rect.top + 10}px`, transform: "translateX(-50%)",
-                zIndex: "8000", maxWidth: `${rect.width * 0.8}px`, padding: "6px 14px", boxSizing: "border-box",
+                zIndex: "8000", minWidth: "44px", padding: "4px 14px", boxSizing: "border-box",
                 backgroundColor: "#fff", border: "3px solid #000", borderRadius: "15px", textAlign: "center",
-                fontFamily: TR_FONT_JA, fontSize: `${Math.max(12, rect.height * 0.028)}px`, color: "#222", pointerEvents: "none",
-        }, msg);
+                fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(12, rect.height * 0.035)}px`, color: "#222", pointerEvents: "none",
+        }, symbol);
         el.id = "voice-note";
         document.body.appendChild(el);
-        bubbleTimers["voice-note"] = setTimeout(() => removeBubble("voice-note"), 4500);
+        bubbleTimers["voice-note"] = setTimeout(() => removeBubble("voice-note"), 3000);
 }
 
 // ----- character reaction: expression + small motion -----
@@ -283,9 +262,9 @@ async function fetchNpcReaction(speaker, text, sceneIdx) {
                 });
                 if (!res.ok) return;
                 const j = await res.json();
-                if (!j || !j.ok || !j.itya || !j.ja) return;
+                if (!j || !j.ok || !j.itya) return;
                 if (currentSceneIndex !== sceneIdx || inQuiz() || gameState !== "story") return;   // scene moved on
-                const el = buildBubble("npc-bubble", j.itya, j.ja, speaker);
+                const el = buildBubble("npc-bubble", j.itya, speaker);
                 placeBubble(el, speaker, { avoid: document.getElementById("player-bubble") });
                 playReaction(speaker, j.emotion, j.move);
         } catch (e) { /* keep the scripted line */ }
@@ -299,15 +278,17 @@ function handleUtterance(raw, confidence, typed) {
         const now = Date.now();
         if (text === lastUtter && now - lastUtterAt < 4000) return;
         lastUtter = text; lastUtterAt = now;
-        if (inQuiz()) return;   // quizzes are voice-free (the mic icon is hidden too)
+        if (inQuiz() || !talkAllowed()) return;   // only in talk scenes; never during quizzes
         if (translatorBusy || now - lastHandledAt < TRANSLATE_COOLDOWN_MS) return;
-        if (translateCount >= TRANSLATE_SESSION_LIMIT) { showNote("たくさん使ってくれてありがとう。続きはまた後で。"); return; }
+        if (translateCount >= TRANSLATE_SESSION_LIMIT) { showNote("…"); return; }
         lastHandledAt = now;
         window.dispatchEvent(new Event("pointerdown"));   // counts as activity for the idle reset
 
-        const direction = detectDirection(text);
+        // the game speaks i-tya only: a latin-letter line is not a Japanese sentence to translate
+        if (/^[\x00-\x7F\s]+$/.test(text)) { showNote("?"); return; }
+        const direction = "toItya";
         // your own bubble first; the i-tya line fills in when the translation arrives
-        const mine = buildBubble("player-bubble", "...", text, "mc");
+        const mine = buildBubble("player-bubble", "...", "mc");
         placeBubble(mine, "mc");
         removeBubble("npc-bubble");
 
@@ -329,13 +310,10 @@ function handleUtterance(raw, confidence, typed) {
                 if (r.ok) {
                         translateCount++;
                         el.__big.textContent = r.data.translation;
-                        el.__big.style.fontFamily = direction === "toItya" ? TR_FONT_PIXEL : TR_FONT_JA;
-                        el.__small.textContent = text;
                 } else {
-                        const msgs = { limit: `混み合っています。${r.retryAfter} 秒ほど待ってね。`, overload: "混み合っています。少し待ってね。",
-                                empty: "うまく訳せませんでした。", nowords: "その言葉は、まだ辞書にありません。", network: "辞書につながりません。ゲームは続けられます。" };
+                        const sym = { limit: "…", overload: "…", network: "…", empty: "?", nowords: "?" };
                         removeBubble("player-bubble");
-                        showNote(msgs[r.kind] || msgs.network);
+                        showNote(sym[r.kind] || "…");
                         return;
                 }
                 placeBubble(el, "mc");
@@ -348,16 +326,16 @@ function handleUtterance(raw, confidence, typed) {
 function setVoiceUI() {
         const btn = document.getElementById("translator-button");
         if (!btn) return;
-        btn.title = (voiceWanted ? "声の翻訳：オン（押すとオフ）" : "声の翻訳：オフ（押すとオン）") + "  [Tで文字入力]  ※声はChromeの音声認識（Google）で処理されます";
+        btn.title = "";
         const dot = document.getElementById("voice-dot");
         if (dot) dot.style.display = voiceWanted ? "block" : "none";
 }
 
 function startVoice() {
-        if (!SpeechRec) { showNote("このブラウザでは声が使えません。Tキーで文字入力できます"); toggleTypedBar(true); return; }
+        if (!SpeechRec) { showNote("×"); toggleTypedBar(true); return; }
         voiceWanted = true; setVoiceUI();
         try { localStorage.setItem(VOICE_KEY, "1"); } catch (e) {}
-        if (recognition) return;
+        if (recognition || !talkAllowed()) return;   // the mic only opens in talk scenes
         const r = new SpeechRec();
         r.lang = "ja-JP"; r.continuous = true; r.interimResults = false;
         startedAt = Date.now();
@@ -371,7 +349,7 @@ function startVoice() {
                 if (["not-allowed", "service-not-allowed", "audio-capture"].includes(ev.error)) {
                         voiceWanted = false; setVoiceUI();
                         try { localStorage.removeItem(VOICE_KEY); } catch (e) {}
-                        showNote(ev.error === "audio-capture" ? "マイクが見つかりません。文字で入力してね" : "マイクが許可されていません。文字で入力してね");
+                        showNote("×");
                         toggleTypedBar(true);
                 }
         };
@@ -381,7 +359,7 @@ function startVoice() {
                 quickEnds = (Date.now() - startedAt < 1500) ? quickEnds + 1 : 0;
                 if (quickEnds >= 5) {             // keeps failing: stop instead of looping forever
                         voiceWanted = false; setVoiceUI();
-                        showNote("声がうまく聞けません。文字で入力してね");
+                        showNote("×");
                         toggleTypedBar(true);
                         return;
                 }
@@ -389,6 +367,13 @@ function startVoice() {
         };
         recognition = r;
         try { r.start(); } catch (e) { recognition = null; }
+}
+
+// close the microphone but remember that the player wants voice (it reopens in the next talk scene)
+function pauseListening() {
+        clearTimeout(restartTimer);
+        const r = recognition; recognition = null;
+        if (r) { r.onresult = r.onerror = r.onend = null; try { r.abort(); } catch (e) {} }
 }
 
 function stopVoice() {
@@ -407,6 +392,7 @@ function toggleVoice() {
 
 // ----- tiny typed fallback (T key) -----
 function toggleTypedBar(forceOpen) {
+        if (!talkAllowed()) return;
         const old = document.getElementById("typed-bar");
         if (old) { if (forceOpen !== true) old.remove(); return; }
         const { rect } = canvasScale();
@@ -418,7 +404,6 @@ function toggleTypedBar(forceOpen) {
                 borderRadius: "15px", border: "3px solid #000", backgroundColor: "#fff", color: "#222", textAlign: "center", outline: "none",
         });
         input.id = "typed-input"; input.type = "text"; input.maxLength = TRANSLATE_MAX_CHARS;
-        input.placeholder = "日本語 / i-tya  (Enter)";
         input.addEventListener("keydown", (e) => {
                 e.stopPropagation();
                 if (e.key === "Escape") { bar.remove(); return; }
@@ -433,14 +418,18 @@ function toggleTypedBar(forceOpen) {
         input.focus();
 }
 
-// keep the extra UI out of the way of quizzes / the wordbook / loading
+// show the icon and open the mic only in talk scenes; hide everything during quizzes / the wordbook / loading
 function syncVoiceUI() {
         const busy = inQuiz() || !!document.getElementById("wordbook-overlay") || !!document.getElementById("loading-overlay");
+        const allowed = talkAllowed() && !busy;
         const btn = document.getElementById("translator-button");
-        if (btn) btn.style.display = busy ? "none" : "block";
-        if (busy) {
-                ["player-bubble", "npc-bubble", "voice-note", "typed-bar"].forEach(removeBubble);
-                revertExpression();
+        if (btn) btn.style.display = allowed ? "block" : "none";
+        if (!allowed) {
+                pauseListening();
+                removeBubble("typed-bar");
+                if (busy) { ["player-bubble", "npc-bubble", "voice-note"].forEach(removeBubble); revertExpression(); }
+        } else if (voiceWanted && !recognition) {
+                startVoice();   // came back to a talk scene: reopen the mic by itself
         }
 }
 
@@ -462,7 +451,7 @@ function initTranslator() {
         // T = type instead of speak
         window.addEventListener("keydown", (e) => {
                 if (e.key !== "t" && e.key !== "T") return;
-                if (e.ctrlKey || e.metaKey || e.altKey || isTranslatorTyping() || inQuiz()) return;
+                if (e.ctrlKey || e.metaKey || e.altKey || isTranslatorTyping() || inQuiz() || !talkAllowed()) return;
                 if (document.getElementById("wordbook-overlay") || document.getElementById("idle-overlay")) return;
                 e.preventDefault();
                 toggleTypedBar();
