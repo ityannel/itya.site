@@ -117,37 +117,52 @@ function removeEl(id) {
         if (el) el.remove();
 }
 
-// ----- spoken lines: no bubbles, no boxes -----
-// What you say (in i-tya) and the character's answer are drawn by the game itself, in the same
-// plain style as the story text, one after the other, and then the scripted line comes back.
-// drawStory() in function1.js draws `voiceLine` in place of the scripted line.
-let voiceLine = null;            // {text, color}
-const voiceQueue = [];
-let voiceLineTimer = null;
-let utteranceGen = 0;            // bumped when the scene changes, so late replies are dropped
+// ----- spoken lines: plain text, no bubbles, no boxes -----
+// What you say (in i-tya) is drawn under your character's feet, and the character's answer above
+// their head, drawn by the game itself (see drawVoiceLines, called from drawStory in function1.js).
+// The story text at the bottom is never touched.
+const voiceLines = { player: null, npc: null };   // {text, color, until, who}
+let utteranceGen = 0;                             // bumped when the scene changes, so late replies are dropped
 
-function nextVoiceLine() {
-        clearTimeout(voiceLineTimer);
-        const it = voiceQueue.shift();
-        if (!it) { voiceLine = null; return; }
-        voiceLine = { text: it.text, color: it.color };
-        if (it.onStart) it.onStart();
-        voiceLineTimer = setTimeout(nextVoiceLine, it.ms);
+function setVoiceLine(slot, text, color, who, ms) {
+        voiceLines[slot] = { text, color, who, until: Date.now() + ms, drawn: null };
 }
 
-function pushVoiceLine(text, color, ms, onStart) {
-        voiceQueue.push({ text, color, ms: ms || Math.min(5000, 1800 + String(text).length * 80), onStart });
-        if (!voiceLine) nextVoiceLine();
-}
-
-function clearVoiceLine() {
-        clearTimeout(voiceLineTimer);
-        voiceQueue.length = 0;
-        voiceLine = null;
-}
+function clearVoiceLines() { voiceLines.player = null; voiceLines.npc = null; }
 
 // symbols only, no words: "?" = could not say it, "…" = busy, "×" = microphone unavailable
-function showNote(symbol) { clearVoiceLine(); pushVoiceLine(symbol, "#000000", 1400); }
+function showNote(symbol) { clearVoiceLines(); setVoiceLine("player", symbol, "#000000", "mc", 1500); }
+
+function drawVoiceLines() {
+        const now = Date.now();
+        const place = (line, above) => {
+                if (!line || now >= line.until) return;
+                const c = currentChars.find(x => x.char === line.who);
+                // measure by the original picture while an expression swap is running
+                const id = (c && reaction && reaction.c === c) ? reaction.prevImg : (c && c.img);
+                const st = c && imageState[id];
+                const H = canvas.height, W = canvas.width;
+                const size = H * 0.04;
+                context.save();
+                context.font = `400 ${size}px 'Press Start 2P', 'DotGothic16', system-ui`;
+                let fullW = context.measureText(line.text).width;
+                const maxW = W * 0.5;
+                if (fullW > maxW) { context.font = `400 ${size * maxW / fullW}px 'Press Start 2P', 'DotGothic16', system-ui`; fullW = maxW; }
+                let cx, y;
+                if (st && st.w) { cx = st.x + st.w / 2; y = above ? st.y - H * 0.04 : st.y + st.h + H * 0.05; }
+                else { cx = W * (line.who === "mc" ? 0.3 : 0.65); y = H * (above ? 0.4 : 0.7); }
+                cx = Math.min(Math.max(cx, fullW / 2 + W * 0.02), W - fullW / 2 - W * 0.02);
+                y = above ? Math.max(y, size) : Math.min(y, H * 0.8);   // stay clear of the story text at the bottom
+                context.fillStyle = line.color;
+                context.textAlign = "center";
+                context.textBaseline = "middle";
+                context.fillText(line.text, cx, y);
+                context.restore();
+                line.drawn = { x: Math.round(cx), y: Math.round(y) };
+        };
+        place(voiceLines.npc, true);
+        place(voiceLines.player, false);
+}
 
 // ----- character reaction: expression + small motion -----
 // put the character back exactly as scripted (expression + position)
@@ -159,10 +174,10 @@ function revertExpression() {
         reaction = null;
 }
 
-// full reset (scene change / quiz): spoken line + expression, and ignore replies still on their way
+// full reset (scene change / quiz): spoken lines + expression, and ignore replies still on their way
 function cancelReaction() {
         utteranceGen++;
-        clearVoiceLine();
+        clearVoiceLines();
         revertExpression();
 }
 
@@ -219,28 +234,29 @@ function handleUtterance(raw, confidence, typed) {
 
         // a new phrase replaces whatever was still being shown from the last one
         const gen = ++utteranceGen;
-        clearVoiceLine();
+        clearVoiceLines();
         revertExpression();
         const speaker = (currentScene && currentScene.text && NPC_SPEAKERS.includes(currentScene.text.char))
                 ? currentScene.text.char
                 : (currentChars.find(c => NPC_SPEAKERS.includes(c.char)) || {}).char;
 
+        setVoiceLine("player", "...", CHAR_COLORS.mc, "mc", 20000);   // "thinking" until the translation arrives
         translatorBusy = true;
-        const saying = callTranslate("toItya", text).then(r => { translatorBusy = false; lastTranslateAt = Date.now(); return r; });
-        let answering = Promise.resolve(null);
-        if (speaker && gameState === "story" && npcCount < NPC_SESSION_LIMIT) { npcCount++; answering = fetchNpcReply(speaker, text); }
-
-        // 1) what you said, in i-tya, in your colour
-        saying.then(r => {
+        callTranslate("toItya", text).then(r => {
+                translatorBusy = false; lastTranslateAt = Date.now();
                 if (gen !== utteranceGen) return;
-                if (r.ok) { translateCount++; pushVoiceLine(r.data.translation, CHAR_COLORS.mc); }
+                if (r.ok) { translateCount++; setVoiceLine("player", r.data.translation, CHAR_COLORS.mc, "mc", 7000); }
                 else showNote({ limit: "…", overload: "…", network: "…", empty: "?", nowords: "?" }[r.kind] || "…");
         });
-        // 2) then the character's answer, in theirs (with the expression / small movement)
-        Promise.all([saying, answering]).then(([, j]) => {
-                if (gen !== utteranceGen || !j || inQuiz() || gameState !== "story") return;
-                pushVoiceLine(j.itya, CHAR_COLORS[speaker] || "#000000", null, () => playReaction(speaker, j.emotion, j.move));
-        });
+
+        if (speaker && gameState === "story" && npcCount < NPC_SESSION_LIMIT) {
+                npcCount++;
+                fetchNpcReply(speaker, text).then(j => {
+                        if (gen !== utteranceGen || !j || inQuiz() || gameState !== "story") return;
+                        setVoiceLine("npc", j.itya, CHAR_COLORS[speaker] || "#000000", speaker, 7000);
+                        playReaction(speaker, j.emotion, j.move);
+                });
+        }
 }
 
 // ----- continuous recognition with automatic restart -----
@@ -348,7 +364,7 @@ function syncVoiceUI() {
         if (!allowed) {
                 pauseListening();
                 removeEl("typed-bar");
-                if (busy) { clearVoiceLine(); revertExpression(); }
+                if (busy) { clearVoiceLines(); revertExpression(); }
         } else if (voiceWanted && !recognition) {
                 startVoice();   // came back to a talk scene: reopen the mic by itself
         }
