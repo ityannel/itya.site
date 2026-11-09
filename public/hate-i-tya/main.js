@@ -63,48 +63,6 @@ function startIdleWatch() {
         reset();
 }
 
-// ---------- start screen with a short how-to ----------
-function showStartScreen() {
-        return new Promise(resolve => {
-                const el = makeOverlay("start-overlay");
-                el.style.cursor = "pointer";
-                el.style.overflowY = "auto";
-                const iz = "margin:0 0 14px;font-family:'Press Start 2P',system-ui;font-size:0.6em;line-height:2";
-                el.innerHTML = `
-                        <div style="font-size:clamp(24px,5vw,48px);margin-bottom:24px;">Hate i-tya?</div>
-                        <div style="font-family:'DotGothic16',system-ui;font-size:clamp(14px,2.2vw,20px);line-height:1.9;max-width:640px;">
-                                <p style="margin:0 0 14px">架空言語「i-tya語」を学ぶノベルゲームです。</p>
-                                <p style="margin:0">画面の右下に三角形が出ている間、クリックでストーリーが進みます。</p>
-                                <p style="${iz}">Ge un und yu pon und tend sulanyao.</p>
-                                <p style="margin:0">途中でクイズが現れます。正解を見つけてください。</p>
-                                <p style="${iz}">Und sunya-iesunya un i. Zin yanya.</p>
-                                <p style="margin:0">単語帳は、一回目のクイズの後から左上に現れます。</p>
-                                <p style="${iz}">B un saozip ba sunya-iesunya.</p>
-                                <p style="margin:0">マップでは矢印キー（または WASD）で移動し、Enter で入ります。</p>
-                                <p style="margin:0">音が出ます。</p>
-                        </div>
-                        <div id="start-prompt" style="margin-top:32px;font-size:clamp(14px,2.4vw,22px);">Pon (CLICK TO START)</div>`;
-                const blink = setInterval(() => {
-                        const p = document.getElementById("start-prompt");
-                        if (p) p.style.opacity = (Date.now() % 1200 < 800) ? "1" : "0.3";
-                }, 150);
-                const go = () => {
-                        clearInterval(blink);
-                        window.removeEventListener("keydown", onKey);
-                        el.remove();
-                        resolve();
-                };
-                const onKey = (e) => {
-                        if (e.key === "Enter" || e.code === "Space") {
-                                e.preventDefault();
-                                go();
-                        }
-                };
-                el.addEventListener("click", go, { once: true });
-                window.addEventListener("keydown", onKey);
-        });
-}
-
 async function init(){
         // wake the dictionary server up while assets load (it may be asleep)
         if (typeof warmUpDictionary === "function") warmUpDictionary();
@@ -206,9 +164,6 @@ async function init(){
         ]);
 
         loading.remove();
-
-        // most browsers need a click before audio can play
-        await showStartScreen();
 
         if (sound[1001]) sound[1001].volume = 0.3;
 
