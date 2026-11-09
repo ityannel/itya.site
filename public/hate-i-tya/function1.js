@@ -147,7 +147,11 @@ function drawStory() {
                 context.textAlign = currentScene.text.align ?? "center";
                 context.textBaseline = currentScene.text.baseline ?? "middle";
 
-                const content = currentScene.text.content ?? "";
+                // voice mode: the spoken exchange temporarily takes the place of the scripted line,
+                // drawn exactly like the story text (no boxes, no bubbles)
+                const vl = (typeof voiceLine !== "undefined" && voiceLine) ? voiceLine : null;
+                if (vl) context.fillStyle = vl.color;
+                const content = vl ? vl.text : (currentScene.text.content ?? "");
 
                 // long lines (dictionary words are longer) shrink to fit, keeping clear of the arrow
                 const maxTextWidth = canvas.width * 0.72;
@@ -160,7 +164,7 @@ function drawStory() {
                 const textX = canvas.width / 2;
                 const textY = canvas.height * 0.9;
                 const welcometo = "Welcome aboard the Japan Airline's fl"
-                const partial = content.slice(0, textProgress);
+                const partial = vl ? content : content.slice(0, textProgress);
 
                 context.fillText(partial, textX, textY);
         }

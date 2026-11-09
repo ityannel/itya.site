@@ -85,7 +85,6 @@ let lastUtter = "";
 let lastUtterAt = 0;
 let lastHandledAt = 0;
 let reaction = null;      // {c, prevImg, baseX, baseY, timers:[]}
-const bubbleTimers = {};
 
 function mk(tag, styles, text) {
         const el = document.createElement(tag);
@@ -108,115 +107,50 @@ function talkAllowed() {
 
 function inQuiz() { return !!document.getElementById("quiz-container"); }
 
-// ----- speech bubbles (one look for everyone) -----
 function canvasScale() {
         const rect = canvas.getBoundingClientRect();
         return { rect, k: rect.width / canvas.width };
 }
 
-function removeBubble(id) {
-        clearTimeout(bubbleTimers[id]);
+function removeEl(id) {
         const el = document.getElementById(id);
         if (el) el.remove();
 }
 
-// big = main line (i-tya), small = Japanese. who: mc | te | cf | god
-function buildBubble(id, big, who) {
-        removeBubble(id);
-        const { rect } = canvasScale();
-        const color = CHAR_COLORS[who] || "#000";
-        const el = mk("div", {
-                position: "fixed", left: "0", top: "0", zIndex: "8000", boxSizing: "border-box",
-                maxWidth: `${Math.max(150, rect.width * 0.42)}px`, padding: "5px 10px",
-                backgroundColor: "#fff", border: "3px solid #000", borderRadius: "15px",
-                textAlign: "center", pointerEvents: "none", visibility: "hidden",   // clicks pass through to the game
-        });
-        el.id = id;
-        const bigEl = mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(9, rect.height * 0.027)}px`, lineHeight: "1.45", color, wordBreak: "break-word" }, big);
-        const tail = mk("div", { position: "absolute", bottom: "-9px", width: "14px", height: "14px", backgroundColor: "#fff",
-                borderRight: "3px solid #000", borderBottom: "3px solid #000", transform: "rotate(45deg)" });
-        tail.className = "bubble-tail";
-        el.append(bigEl, tail);
-        document.body.appendChild(el);
-        el.__big = bigEl; el.__who = who;
-        bubbleTimers[id] = setTimeout(() => removeBubble(id), 9000);
-        return el;
+// ----- spoken lines: no bubbles, no boxes -----
+// What you say (in i-tya) and the character's answer are drawn by the game itself, in the same
+// plain style as the story text, one after the other, and then the scripted line comes back.
+// drawStory() in function1.js draws `voiceLine` in place of the scripted line.
+let voiceLine = null;            // {text, color}
+const voiceQueue = [];
+let voiceLineTimer = null;
+let utteranceGen = 0;            // bumped when the scene changes, so late replies are dropped
+
+function nextVoiceLine() {
+        clearTimeout(voiceLineTimer);
+        const it = voiceQueue.shift();
+        if (!it) { voiceLine = null; return; }
+        voiceLine = { text: it.text, color: it.color };
+        if (it.onStart) it.onStart();
+        voiceLineTimer = setTimeout(nextVoiceLine, it.ms);
 }
 
-function charBox(who) {
-        const c = currentChars.find(x => x.char === who);
-        const { rect, k } = canvasScale();
-        // while an expression swap is running, measure the character by its original picture
-        // (the swapped picture has no size yet during its first frame)
-        const id = (c && reaction && reaction.c === c) ? reaction.prevImg : (c && c.img);
-        if (c && imageState[id] && imageState[id].w) {
-                const st = imageState[id];
-                return { cx: rect.left + (st.x + st.w / 2) * k, top: rect.top + st.y * k, bottom: rect.top + (st.y + st.h) * k };
-        }
-        return null;
+function pushVoiceLine(text, color, ms, onStart) {
+        voiceQueue.push({ text, color, ms: ms || Math.min(5000, 1800 + String(text).length * 80), onStart });
+        if (!voiceLine) nextVoiceLine();
 }
 
-// Placement rules (so nothing ever covers a face or the story text):
-//  - NPC bubble: above the speaker's head;  your bubble: below your character's feet
-//  - if there is black margin around the frame (phones in portrait), bubbles go there instead
-//  - always clamped inside the screen; falls back to stacking above if "below" would touch the story text
-function placeBubble(el, who, opts) {
-        opts = opts || {};
-        const { rect } = canvasScale();
-        const w = el.offsetWidth, h = el.offsetHeight;
-        const tail = el.querySelector(".bubble-tail");
-        const setTail = (dir, x) => {
-                if (dir === "none") { tail.style.display = "none"; return; }
-                tail.style.display = "block";
-                tail.style.left = `${Math.min(Math.max(x, 14), w - 28)}px`;
-                if (dir === "down") { Object.assign(tail.style, { top: "auto", bottom: "-9px", borderTop: "none", borderLeft: "none", borderRight: "3px solid #000", borderBottom: "3px solid #000" }); }
-                else { Object.assign(tail.style, { bottom: "auto", top: "-9px", borderRight: "none", borderBottom: "none", borderTop: "3px solid #000", borderLeft: "3px solid #000" }); }
-        };
-        const clampX = (x) => Math.min(Math.max(x, 8), window.innerWidth - w - 8);
-        const marginRoom = rect.top >= 120;   // portrait phones: black space above/below the frame
-
-        if (marginRoom) {
-                const left = clampX(rect.left + rect.width / 2 - w / 2);
-                const top = (who === "mc") ? rect.bottom + 8 : Math.max(8, rect.top - h - 8);
-                el.style.left = `${left}px`; el.style.top = `${top}px`; setTail("none");
-                el.style.visibility = "visible";
-                return;
-        }
-        const box = charBox(who) || { cx: rect.left + rect.width * (who === "mc" ? 0.3 : 0.65), top: rect.top + rect.height * 0.45, bottom: rect.top + rect.height * 0.7 };
-        const left = Math.min(Math.max(box.cx - w / 2, rect.left + 8), rect.right - w - 8);
-        const storyLine = rect.top + rect.height * 0.865;   // the game's dialogue text lives below this
-        let top, dir;
-        if (who === "mc" && box.bottom + 16 + h <= storyLine) { top = box.bottom + 16; dir = "up"; }
-        else {
-                top = Math.max(box.top - h - 16, rect.top + 8); dir = "down";
-                if (opts.avoid) {
-                        const a = opts.avoid.getBoundingClientRect();
-                        const overlap = left < a.right && left + w > a.left && top < a.bottom && top + h > a.top;
-                        if (overlap) top = Math.max(rect.top + 8, a.top - h - 12);
-                }
-        }
-        el.style.left = `${left}px`; el.style.top = `${top}px`;
-        setTail(dir, box.cx - left - 7);
-        el.style.visibility = "visible";
+function clearVoiceLine() {
+        clearTimeout(voiceLineTimer);
+        voiceQueue.length = 0;
+        voiceLine = null;
 }
 
-// small notice: symbols only, no words ("?" = could not say it, "…" = busy, "×" = microphone unavailable)
-function showNote(symbol) {
-        const { rect } = canvasScale();
-        removeBubble("voice-note");
-        const el = mk("div", {
-                position: "fixed", left: `${rect.left + rect.width / 2}px`, top: `${rect.top + 10}px`, transform: "translateX(-50%)",
-                zIndex: "8000", minWidth: "44px", padding: "4px 14px", boxSizing: "border-box",
-                backgroundColor: "#fff", border: "3px solid #000", borderRadius: "15px", textAlign: "center",
-                fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(12, rect.height * 0.035)}px`, color: "#222", pointerEvents: "none",
-        }, symbol);
-        el.id = "voice-note";
-        document.body.appendChild(el);
-        bubbleTimers["voice-note"] = setTimeout(() => removeBubble("voice-note"), 3000);
-}
+// symbols only, no words: "?" = could not say it, "…" = busy, "×" = microphone unavailable
+function showNote(symbol) { clearVoiceLine(); pushVoiceLine(symbol, "#000000", 1400); }
 
 // ----- character reaction: expression + small motion -----
-// put the character back exactly as scripted (expression + position); leaves the bubbles alone
+// put the character back exactly as scripted (expression + position)
 function revertExpression() {
         if (!reaction) return;
         reaction.timers.forEach(clearTimeout);
@@ -225,9 +159,10 @@ function revertExpression() {
         reaction = null;
 }
 
-// full reset (scene change / quiz): bubbles + expression
+// full reset (scene change / quiz): spoken line + expression, and ignore replies still on their way
 function cancelReaction() {
-        ["player-bubble", "npc-bubble", "voice-note"].forEach(removeBubble);
+        utteranceGen++;
+        clearVoiceLine();
         revertExpression();
 }
 
@@ -249,7 +184,7 @@ function playReaction(speaker, emotion, move) {
         later(() => { if (reaction === r) revertExpression(); }, 4500);   // back to the scripted look
 }
 
-async function fetchNpcReaction(speaker, text, sceneIdx) {
+async function fetchNpcReply(speaker, text) {
         try {
                 const res = await fetch(`${DICT_API}/api/npc`, {
                         method: "POST", headers: { "Content-Type": "application/json" },
@@ -260,14 +195,10 @@ async function fetchNpcReaction(speaker, text, sceneIdx) {
                                 known_words: (typeof wordbookData !== "undefined" ? wordbookData : []).map(w => w.word),
                         }),
                 });
-                if (!res.ok) return;
+                if (!res.ok) return null;
                 const j = await res.json();
-                if (!j || !j.ok || !j.itya) return;
-                if (currentSceneIndex !== sceneIdx || inQuiz() || gameState !== "story") return;   // scene moved on
-                const el = buildBubble("npc-bubble", j.itya, speaker);
-                placeBubble(el, speaker, { avoid: document.getElementById("player-bubble") });
-                playReaction(speaker, j.emotion, j.move);
-        } catch (e) { /* keep the scripted line */ }
+                return (j && j.ok && j.itya) ? j : null;
+        } catch (e) { return null; }   // keep the scripted line
 }
 
 // ----- one spoken (or typed) phrase -----
@@ -281,44 +212,34 @@ function handleUtterance(raw, confidence, typed) {
         if (inQuiz() || !talkAllowed()) return;   // only in talk scenes; never during quizzes
         if (translatorBusy || now - lastHandledAt < TRANSLATE_COOLDOWN_MS) return;
         if (translateCount >= TRANSLATE_SESSION_LIMIT) { showNote("…"); return; }
+        // the game speaks i-tya only: a latin-letter line is not a Japanese sentence to translate
+        if (/^[\x00-\x7F\s]+$/.test(text)) { showNote("?"); return; }
         lastHandledAt = now;
         window.dispatchEvent(new Event("pointerdown"));   // counts as activity for the idle reset
 
-        // the game speaks i-tya only: a latin-letter line is not a Japanese sentence to translate
-        if (/^[\x00-\x7F\s]+$/.test(text)) { showNote("?"); return; }
-        const direction = "toItya";
-        // your own bubble first; the i-tya line fills in when the translation arrives
-        const mine = buildBubble("player-bubble", "...", "mc");
-        placeBubble(mine, "mc");
-        removeBubble("npc-bubble");
-
-        // character reaction (only when Japanese was spoken and someone is in the scene)
-        if (direction === "toItya" && gameState === "story" && npcCount < NPC_SESSION_LIMIT) {
-                const speaker = (currentScene && currentScene.text && NPC_SPEAKERS.includes(currentScene.text.char))
-                        ? currentScene.text.char
-                        : (currentChars.find(c => NPC_SPEAKERS.includes(c.char)) || {}).char;
-                if (speaker) { npcCount++; fetchNpcReaction(speaker, text, currentSceneIndex); }
-        }
+        // a new phrase replaces whatever was still being shown from the last one
+        const gen = ++utteranceGen;
+        clearVoiceLine();
+        revertExpression();
+        const speaker = (currentScene && currentScene.text && NPC_SPEAKERS.includes(currentScene.text.char))
+                ? currentScene.text.char
+                : (currentChars.find(c => NPC_SPEAKERS.includes(c.char)) || {}).char;
 
         translatorBusy = true;
-        const sceneIdx = currentSceneIndex;
-        callTranslate(direction, text).then(r => {
-                translatorBusy = false;
-                lastTranslateAt = Date.now();
-                const el = document.getElementById("player-bubble");
-                if (!el || currentSceneIndex !== sceneIdx) return;
-                if (r.ok) {
-                        translateCount++;
-                        el.__big.textContent = r.data.translation;
-                } else {
-                        const sym = { limit: "…", overload: "…", network: "…", empty: "?", nowords: "?" };
-                        removeBubble("player-bubble");
-                        showNote(sym[r.kind] || "…");
-                        return;
-                }
-                placeBubble(el, "mc");
-                const npc = document.getElementById("npc-bubble");
-                if (npc) placeBubble(npc, npc.__who, { avoid: el });
+        const saying = callTranslate("toItya", text).then(r => { translatorBusy = false; lastTranslateAt = Date.now(); return r; });
+        let answering = Promise.resolve(null);
+        if (speaker && gameState === "story" && npcCount < NPC_SESSION_LIMIT) { npcCount++; answering = fetchNpcReply(speaker, text); }
+
+        // 1) what you said, in i-tya, in your colour
+        saying.then(r => {
+                if (gen !== utteranceGen) return;
+                if (r.ok) { translateCount++; pushVoiceLine(r.data.translation, CHAR_COLORS.mc); }
+                else showNote({ limit: "…", overload: "…", network: "…", empty: "?", nowords: "?" }[r.kind] || "…");
+        });
+        // 2) then the character's answer, in theirs (with the expression / small movement)
+        Promise.all([saying, answering]).then(([, j]) => {
+                if (gen !== utteranceGen || !j || inQuiz() || gameState !== "story") return;
+                pushVoiceLine(j.itya, CHAR_COLORS[speaker] || "#000000", null, () => playReaction(speaker, j.emotion, j.move));
         });
 }
 
@@ -426,8 +347,8 @@ function syncVoiceUI() {
         if (btn) btn.style.display = allowed ? "block" : "none";
         if (!allowed) {
                 pauseListening();
-                removeBubble("typed-bar");
-                if (busy) { ["player-bubble", "npc-bubble", "voice-note"].forEach(removeBubble); revertExpression(); }
+                removeEl("typed-bar");
+                if (busy) { clearVoiceLine(); revertExpression(); }
         } else if (voiceWanted && !recognition) {
                 startVoice();   // came back to a talk scene: reopen the mic by itself
         }
