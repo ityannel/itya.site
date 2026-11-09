@@ -102,15 +102,17 @@ async function lookupWordMeaning(word) {
 }
 
 // ---------- hands-free voice mode ----------
-// Turn the mic on once; it keeps listening. Each spoken phrase is
-//   (1) shown as a small subtitle with its i-tya translation, and
-//   (2) answered by the character in the scene (AI reaction, validated by the server).
+// Turn the mic on once; it keeps listening. Each phrase you say appears as a speech
+// bubble above your character (with its i-tya), and the character you are talking to
+// answers in an identical bubble above their head. Same look as the game: paper-white
+// boxes with a black marker outline, Press Start 2P for i-tya, DotGothic16 for Japanese.
 // Disabled during quizzes so a translation can never give the answer away.
 
 const VOICE_KEY = "itya_voice";
 const NPC_SESSION_LIMIT = 40;
 const NPC_SPEAKERS = ["te", "cf", "god"];
-const NPC_COLORS = { te: "#2c2e97", cf: "#000000", god: "#005bd2" };
+// text colours = the game's own dialogue colours (see drawStory)
+const CHAR_COLORS = { mc: "#9c3115", te: "#2c2e97", cf: "#000000", god: "#005bd2" };
 // expression images per character (ids as loaded in main.js); only these may be chosen
 const NPC_EXPR = {
         te: { normal: 5, smile: 6, angry: 7, puzzled: 12 },
@@ -119,7 +121,8 @@ const NPC_EXPR = {
 };
 const TR_FONT_JA = "'DotGothic16', system-ui";
 const TR_FONT_PIXEL = "'Press Start 2P', system-ui";
-const MIC_SVG = `<svg viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
+// hand-drawn white marker line mic (same feel as the notebook icon next to it)
+const MIC_SVG = `<svg viewBox="0 0 48 48" width="100%" height="100%" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9c0-3.2 2.4-5.3 5.2-5.1 2.9.2 4.9 2.3 4.8 5.3l-.2 12.6c0 3.1-2.2 5.4-5 5.3-2.9-.1-5-2.3-4.9-5.4z"/><path d="M11.5 22c.3 7.6 5.2 12.2 12.6 12.3 7.5.1 12.2-5 12.4-12.4"/><path d="M24.2 34.6l-.3 9M17.5 44.4c4.2-.9 9.4-1 13.6.1"/><path id="voice-dot" d="M37 6.5c2.6-.6 5.2 1.2 5.3 3.7.2 2.6-1.8 4.6-4.2 4.7-2.5.1-4.6-1.8-4.6-4.2" stroke="#ff4d4d" fill="#ff4d4d" style="display:none"/></svg>`;
 const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 let voiceWanted = false;
@@ -131,9 +134,8 @@ let npcCount = 0;
 let lastUtter = "";
 let lastUtterAt = 0;
 let lastHandledAt = 0;
-let subtitleTimer = null;
-let bubbleTimer = null;
 let reaction = null;      // {c, prevImg, baseX, baseY, timers:[]}
+const bubbleTimers = {};
 
 function mk(tag, styles, text) {
         const el = document.createElement(tag);
@@ -155,30 +157,114 @@ function isTranslatorTyping() {
 
 function inQuiz() { return !!document.getElementById("quiz-container"); }
 
-// ----- subtitle (top centre) -----
-function showSubtitle(heard, itya, color) {
-        let box = document.getElementById("voice-subtitle");
-        if (!box) {
-                box = mk("div", {
-                        position: "fixed", top: "10px", left: "50%", transform: "translateX(-50%)", zIndex: "8000",
-                        maxWidth: "70%", textAlign: "center", padding: "8px 14px", borderRadius: "10px",
-                        backgroundColor: "rgba(0,0,0,0.65)", color: "white", pointerEvents: "none",
-                });
-                box.id = "voice-subtitle";
-                box.append(mk("div", { fontFamily: TR_FONT_JA, fontSize: "16px", opacity: "0.85", wordBreak: "break-word" }),
-                           mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: "18px", marginTop: "6px", lineHeight: "1.5", wordBreak: "break-word" }));
-                document.body.appendChild(box);
-        }
-        box.firstChild.textContent = heard || "";
-        box.lastChild.textContent = itya || "";
-        box.lastChild.style.color = color || "white";
-        box.style.display = "block";
-        clearTimeout(subtitleTimer);
-        subtitleTimer = setTimeout(() => { box.style.display = "none"; }, 7000);
+// ----- speech bubbles (one look for everyone) -----
+function canvasScale() {
+        const rect = canvas.getBoundingClientRect();
+        return { rect, k: rect.width / canvas.width };
 }
 
-// ----- character reaction: bubble + expression + small motion -----
-// put the character back exactly as scripted (expression + position); leaves the bubble alone
+function removeBubble(id) {
+        clearTimeout(bubbleTimers[id]);
+        const el = document.getElementById(id);
+        if (el) el.remove();
+}
+
+// big = main line (i-tya), small = Japanese. who: mc | te | cf | god
+function buildBubble(id, big, small, who) {
+        removeBubble(id);
+        const { rect } = canvasScale();
+        const color = CHAR_COLORS[who] || "#000";
+        const el = mk("div", {
+                position: "fixed", left: "0", top: "0", zIndex: "8000", boxSizing: "border-box",
+                maxWidth: `${Math.max(150, rect.width * 0.36)}px`, padding: "5px 10px",
+                backgroundColor: "#fff", border: "3px solid #000", borderRadius: "15px",
+                textAlign: "center", cursor: "pointer", visibility: "hidden",
+        });
+        el.id = id;
+        const bigEl = mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(10, rect.height * 0.032)}px`, lineHeight: "1.45", color, wordBreak: "break-word" }, big);
+        const smallEl = mk("div", { fontFamily: TR_FONT_JA, fontSize: `${Math.max(11, rect.height * 0.026)}px`, color: "#555", marginTop: "2px", lineHeight: "1.3", wordBreak: "break-word" }, small);
+        const tail = mk("div", { position: "absolute", bottom: "-9px", width: "14px", height: "14px", backgroundColor: "#fff",
+                borderRight: "3px solid #000", borderBottom: "3px solid #000", transform: "rotate(45deg)" });
+        tail.className = "bubble-tail";
+        el.append(bigEl, smallEl, tail);
+        el.onclick = () => removeBubble(id);
+        document.body.appendChild(el);
+        el.__big = bigEl; el.__small = smallEl; el.__who = who;
+        bubbleTimers[id] = setTimeout(() => removeBubble(id), 9000);
+        return el;
+}
+
+function charBox(who) {
+        const c = currentChars.find(x => x.char === who);
+        const { rect, k } = canvasScale();
+        if (c && imageState[c.img] && imageState[c.img].w) {
+                const st = imageState[c.img];
+                return { cx: rect.left + (st.x + st.w / 2) * k, top: rect.top + st.y * k, bottom: rect.top + (st.y + st.h) * k };
+        }
+        return null;
+}
+
+// Placement rules (so nothing ever covers a face or the story text):
+//  - NPC bubble: above the speaker's head;  your bubble: below your character's feet
+//  - if there is black margin around the frame (phones in portrait), bubbles go there instead
+//  - always clamped inside the screen; falls back to stacking above if "below" would touch the story text
+function placeBubble(el, who, opts) {
+        opts = opts || {};
+        const { rect } = canvasScale();
+        const w = el.offsetWidth, h = el.offsetHeight;
+        const tail = el.querySelector(".bubble-tail");
+        const setTail = (dir, x) => {
+                if (dir === "none") { tail.style.display = "none"; return; }
+                tail.style.display = "block";
+                tail.style.left = `${Math.min(Math.max(x, 14), w - 28)}px`;
+                if (dir === "down") { Object.assign(tail.style, { top: "auto", bottom: "-9px", borderTop: "none", borderLeft: "none", borderRight: "3px solid #000", borderBottom: "3px solid #000" }); }
+                else { Object.assign(tail.style, { bottom: "auto", top: "-9px", borderRight: "none", borderBottom: "none", borderTop: "3px solid #000", borderLeft: "3px solid #000" }); }
+        };
+        const clampX = (x) => Math.min(Math.max(x, 8), window.innerWidth - w - 8);
+        const marginRoom = rect.top >= 120;   // portrait phones: black space above/below the frame
+
+        if (marginRoom) {
+                const left = clampX(rect.left + rect.width / 2 - w / 2);
+                const top = (who === "mc") ? rect.bottom + 8 : Math.max(8, rect.top - h - 8);
+                el.style.left = `${left}px`; el.style.top = `${top}px`; setTail("none");
+                el.style.visibility = "visible";
+                return;
+        }
+        const box = charBox(who) || { cx: rect.left + rect.width * (who === "mc" ? 0.3 : 0.65), top: rect.top + rect.height * 0.45, bottom: rect.top + rect.height * 0.7 };
+        const left = Math.min(Math.max(box.cx - w / 2, rect.left + 8), rect.right - w - 8);
+        const storyLine = rect.top + rect.height * 0.865;   // the game's dialogue text lives below this
+        let top, dir;
+        if (who === "mc" && box.bottom + 16 + h <= storyLine) { top = box.bottom + 16; dir = "up"; }
+        else {
+                top = Math.max(box.top - h - 16, rect.top + 8); dir = "down";
+                if (opts.avoid) {
+                        const a = opts.avoid.getBoundingClientRect();
+                        const overlap = left < a.right && left + w > a.left && top < a.bottom && top + h > a.top;
+                        if (overlap) top = Math.max(rect.top + 8, a.top - h - 12);
+                }
+        }
+        el.style.left = `${left}px`; el.style.top = `${top}px`;
+        setTail(dir, box.cx - left - 7);
+        el.style.visibility = "visible";
+}
+
+// small notice (errors, hints): same box, top centre of the frame
+function showNote(msg) {
+        const { rect } = canvasScale();
+        removeBubble("voice-note");
+        const el = mk("div", {
+                position: "fixed", left: `${rect.left + rect.width / 2}px`, top: `${rect.top + 10}px`, transform: "translateX(-50%)",
+                zIndex: "8000", maxWidth: `${rect.width * 0.8}px`, padding: "6px 14px", boxSizing: "border-box",
+                backgroundColor: "#fff", border: "3px solid #000", borderRadius: "15px", textAlign: "center",
+                fontFamily: TR_FONT_JA, fontSize: `${Math.max(12, rect.height * 0.028)}px`, color: "#222", pointerEvents: "none",
+        }, msg);
+        el.id = "voice-note";
+        document.body.appendChild(el);
+        bubbleTimers["voice-note"] = setTimeout(() => removeBubble("voice-note"), 4500);
+}
+
+// ----- character reaction: expression + small motion -----
+// put the character back exactly as scripted (expression + position); leaves the bubbles alone
 function revertExpression() {
         if (!reaction) return;
         reaction.timers.forEach(clearTimeout);
@@ -187,31 +273,10 @@ function revertExpression() {
         reaction = null;
 }
 
-// full reset (scene change): bubble + expression
+// full reset (scene change / quiz): bubbles + expression
 function cancelReaction() {
-        clearTimeout(bubbleTimer);
-        const b = document.getElementById("npc-bubble");
-        if (b) b.remove();
+        ["player-bubble", "npc-bubble", "voice-note"].forEach(removeBubble);
         revertExpression();
-}
-
-function showBubble(reply, speaker) {
-        const old = document.getElementById("npc-bubble"); if (old) old.remove();
-        const rect = canvas.getBoundingClientRect();
-        const bubble = mk("div", {
-                position: "fixed", left: `${rect.left + rect.width / 2}px`, top: `${rect.top + rect.height * 0.8}px`,
-                transform: "translate(-50%, -100%)", zIndex: "8000", maxWidth: `${Math.max(240, rect.width * 0.8)}px`,
-                backgroundColor: "rgba(255,255,255,0.94)", border: "3px solid #000", borderRadius: "12px",
-                padding: "10px 16px", textAlign: "center", cursor: "pointer",
-        });
-        bubble.id = "npc-bubble";
-        bubble.append(
-                mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(12, rect.height * 0.04)}px`, lineHeight: "1.6", color: NPC_COLORS[speaker] || "#000", wordBreak: "break-word" }, reply.itya),
-                mk("div", { fontFamily: TR_FONT_JA, fontSize: `${Math.max(11, rect.height * 0.026)}px`, color: "#555", marginTop: "4px" }, reply.ja));
-        bubble.onclick = () => bubble.remove();
-        document.body.appendChild(bubble);
-        clearTimeout(bubbleTimer);
-        bubbleTimer = setTimeout(() => bubble.remove(), 9000);
 }
 
 function playReaction(speaker, emotion, move) {
@@ -247,7 +312,8 @@ async function fetchNpcReaction(speaker, text, sceneIdx) {
                 const j = await res.json();
                 if (!j || !j.ok || !j.itya || !j.ja) return;
                 if (currentSceneIndex !== sceneIdx || inQuiz() || gameState !== "story") return;   // scene moved on
-                showBubble(j, speaker);
+                const el = buildBubble("npc-bubble", j.itya, j.ja, speaker);
+                placeBubble(el, speaker, { avoid: document.getElementById("player-bubble") });
                 playReaction(speaker, j.emotion, j.move);
         } catch (e) { /* keep the scripted line */ }
 }
@@ -260,14 +326,17 @@ function handleUtterance(raw, confidence, typed) {
         const now = Date.now();
         if (text === lastUtter && now - lastUtterAt < 4000) return;
         lastUtter = text; lastUtterAt = now;
-        if (inQuiz()) { showSubtitle("クイズ中は翻訳できません", ""); return; }
+        if (inQuiz()) return;   // quizzes are voice-free (the mic icon is hidden too)
         if (translatorBusy || now - lastHandledAt < TRANSLATE_COOLDOWN_MS) return;
-        if (translateCount >= TRANSLATE_SESSION_LIMIT) { showSubtitle("たくさん使ってくれてありがとう。続きはまた後で。", ""); return; }
+        if (translateCount >= TRANSLATE_SESSION_LIMIT) { showNote("たくさん使ってくれてありがとう。続きはまた後で。"); return; }
         lastHandledAt = now;
         window.dispatchEvent(new Event("pointerdown"));   // counts as activity for the idle reset
 
         const direction = detectDirection(text);
-        showSubtitle(text, "...");
+        // your own bubble first; the i-tya line fills in when the translation arrives
+        const mine = buildBubble("player-bubble", "...", text, "mc");
+        placeBubble(mine, "mc");
+        removeBubble("npc-bubble");
 
         // character reaction (only when Japanese was spoken and someone is in the scene)
         if (direction === "toItya" && gameState === "story" && npcCount < NPC_SESSION_LIMIT) {
@@ -278,18 +347,29 @@ function handleUtterance(raw, confidence, typed) {
         }
 
         translatorBusy = true;
+        const sceneIdx = currentSceneIndex;
         callTranslate(direction, text).then(r => {
                 translatorBusy = false;
                 lastTranslateAt = Date.now();
+                const el = document.getElementById("player-bubble");
+                if (!el || currentSceneIndex !== sceneIdx) return;
                 if (r.ok) {
                         translateCount++;
                         const hasNew = direction === "toItya" && (r.data.breakdown || []).some(b => b.status === "new");
-                        showSubtitle(text, r.data.translation, hasNew ? "#f1c40f" : "white");   // yellow = AI-proposed word
+                        el.__big.textContent = r.data.translation;
+                        el.__big.style.fontFamily = direction === "toItya" ? TR_FONT_PIXEL : TR_FONT_JA;
+                        el.__small.textContent = text;
+                        if (hasNew) el.__small.textContent = `${text}（辞書にない語の案を含みます）`;
                 } else {
                         const msgs = { limit: `混み合っています。${r.retryAfter} 秒ほど待ってね。`, overload: "混み合っています。少し待ってね。",
                                 empty: "うまく訳せませんでした。", network: "辞書につながりません。ゲームは続けられます。" };
-                        showSubtitle(text, msgs[r.kind] || msgs.network, "#ff9b9b");
+                        removeBubble("player-bubble");
+                        showNote(msgs[r.kind] || msgs.network);
+                        return;
                 }
+                placeBubble(el, "mc");
+                const npc = document.getElementById("npc-bubble");
+                if (npc) placeBubble(npc, npc.__who, { avoid: el });
         });
 }
 
@@ -297,15 +377,13 @@ function handleUtterance(raw, confidence, typed) {
 function setVoiceUI() {
         const btn = document.getElementById("translator-button");
         if (!btn) return;
-        btn.style.borderColor = voiceWanted ? "#ff4d4d" : "white";
-        btn.style.boxShadow = voiceWanted ? "0 0 10px #ff4d4d" : "none";
-        btn.title = voiceWanted ? "声の翻訳：オン（押すとオフ）" : "声の翻訳：オフ（押すとオン）";
+        btn.title = voiceWanted ? "声の翻訳：オン（押すとオフ）" : "声の翻訳：オフ（押すとオン）  [Tで文字入力]";
         const dot = document.getElementById("voice-dot");
         if (dot) dot.style.display = voiceWanted ? "block" : "none";
 }
 
 function startVoice() {
-        if (!SpeechRec) { showSubtitle("このブラウザでは声が使えません。⌨で入力してね。", ""); return; }
+        if (!SpeechRec) { showNote("このブラウザでは声が使えません。Tキーで文字入力できます"); toggleTypedBar(true); return; }
         voiceWanted = true; setVoiceUI();
         try { localStorage.setItem(VOICE_KEY, "1"); } catch (e) {}
         if (recognition) return;
@@ -322,8 +400,8 @@ function startVoice() {
                 if (["not-allowed", "service-not-allowed", "audio-capture"].includes(ev.error)) {
                         voiceWanted = false; setVoiceUI();
                         try { localStorage.removeItem(VOICE_KEY); } catch (e) {}
-                        showSubtitle(ev.error === "audio-capture" ? "マイクが見つかりません。⌨で入力してね。"
-                                : "マイクが許可されていません。⌨で入力してね。", "");
+                        showNote(ev.error === "audio-capture" ? "マイクが見つかりません。文字で入力してね" : "マイクが許可されていません。文字で入力してね");
+                        toggleTypedBar(true);
                 }
         };
         r.onend = () => {
@@ -332,7 +410,8 @@ function startVoice() {
                 quickEnds = (Date.now() - startedAt < 1500) ? quickEnds + 1 : 0;
                 if (quickEnds >= 5) {             // keeps failing: stop instead of looping forever
                         voiceWanted = false; setVoiceUI();
-                        showSubtitle("声がうまく聞けません。⌨で入力してね。", "");
+                        showNote("声がうまく聞けません。文字で入力してね");
+                        toggleTypedBar(true);
                         return;
                 }
                 restartTimer = setTimeout(startVoice, Math.min(10000, 300 * Math.pow(2, quickEnds)));
@@ -350,24 +429,24 @@ function stopVoice() {
 }
 
 function toggleVoice() {
-        if (voiceWanted) { stopVoice(); showSubtitle("声の翻訳をオフにしました", ""); }
+        if (voiceWanted) { stopVoice(); showNote("声の翻訳をオフにしました"); }
         else {
                 startVoice();
-                showSubtitle("聞いています。話しかけてみてね", "");
-                // tiny privacy note, once per page load
-                setTimeout(() => showSubtitle("声はChromeの音声認識（Google）で処理されます", ""), 2500);
+                showNote("聞いています（声はChromeで処理されます）");
         }
 }
 
-// ----- tiny typed fallback -----
-function toggleTypedBar() {
+// ----- tiny typed fallback (T key) -----
+function toggleTypedBar(forceOpen) {
         const old = document.getElementById("typed-bar");
-        if (old) { old.remove(); return; }
-        const bar = mk("div", { position: "fixed", top: "70px", left: "50%", transform: "translateX(-50%)", zIndex: "9001", width: "min(420px, 80%)" });
+        if (old) { if (forceOpen !== true) old.remove(); return; }
+        const { rect } = canvasScale();
+        const bar = mk("div", { position: "fixed", left: `${rect.left + rect.width / 2}px`, top: `${rect.top + 52}px`, transform: "translateX(-50%)",
+                zIndex: "8500", width: `${Math.min(420, rect.width * 0.8)}px` });
         bar.id = "typed-bar";
         const input = mk("input", {
-                width: "100%", boxSizing: "border-box", padding: "10px", fontFamily: TR_FONT_JA, fontSize: "18px",
-                borderRadius: "8px", border: "2px solid #888", backgroundColor: "white", color: "#222", textAlign: "center",
+                width: "100%", boxSizing: "border-box", padding: "8px 12px", fontFamily: TR_FONT_JA, fontSize: `${Math.max(13, rect.height * 0.03)}px`,
+                borderRadius: "15px", border: "3px solid #000", backgroundColor: "#fff", color: "#222", textAlign: "center", outline: "none",
         });
         input.id = "typed-input"; input.type = "text"; input.maxLength = TRANSLATE_MAX_CHARS;
         input.placeholder = "日本語 / i-tya  (Enter)";
@@ -385,31 +464,40 @@ function toggleTypedBar() {
         input.focus();
 }
 
+// keep the extra UI out of the way of quizzes / the wordbook / loading
+function syncVoiceUI() {
+        const busy = inQuiz() || !!document.getElementById("wordbook-overlay") || !!document.getElementById("loading-overlay");
+        const btn = document.getElementById("translator-button");
+        if (btn) btn.style.display = busy ? "none" : "block";
+        if (busy) {
+                ["player-bubble", "npc-bubble", "voice-note", "typed-bar"].forEach(removeBubble);
+                revertExpression();
+        }
+}
+
 function initTranslator() {
         if (document.getElementById("translator-button")) return;
-        const style = document.createElement("style");
-        style.textContent = "@keyframes voicepulse{0%,100%{opacity:1}50%{opacity:.25}}";
-        document.head.appendChild(style);
 
+        // one icon, same corner logic as the notebook icon on the other side
         const btn = mk("button", {
-                position: "fixed", top: "10px", right: "10px", width: "50px", height: "50px", padding: "9px",
-                boxSizing: "border-box", cursor: "pointer", zIndex: "9000",
-                backgroundColor: "rgba(0,0,0,0.55)", border: "2px solid white", borderRadius: "10px",
+                position: "fixed", top: "10px", right: "10px", width: "50px", height: "50px", padding: "4px",
+                boxSizing: "border-box", cursor: "pointer", zIndex: "9000", background: "none", border: "none",
         });
         btn.id = "translator-button";
         btn.innerHTML = MIC_SVG;             // static SVG only
-        const dot = mk("span", { position: "absolute", top: "4px", right: "4px", width: "9px", height: "9px", borderRadius: "50%",
-                backgroundColor: "#ff4d4d", display: "none", animation: "voicepulse 1.2s infinite" });
-        dot.id = "voice-dot";
-        btn.appendChild(dot);
         btn.onclick = toggleVoice;
         document.body.appendChild(btn);
+        setVoiceUI();
+        setInterval(syncVoiceUI, 250);
 
-        const kb = mk("button", { position: "fixed", top: "66px", right: "10px", width: "50px", height: "28px", cursor: "pointer", zIndex: "9000",
-                fontSize: "16px", color: "white", backgroundColor: "rgba(0,0,0,0.55)", border: "2px solid white", borderRadius: "8px", padding: "0" }, "⌨");
-        kb.title = "文字で入力";
-        kb.onclick = toggleTypedBar;
-        document.body.appendChild(kb);
+        // T = type instead of speak
+        window.addEventListener("keydown", (e) => {
+                if (e.key !== "t" && e.key !== "T") return;
+                if (e.ctrlKey || e.metaKey || e.altKey || isTranslatorTyping() || inQuiz()) return;
+                if (document.getElementById("wordbook-overlay") || document.getElementById("idle-overlay")) return;
+                e.preventDefault();
+                toggleTypedBar();
+        });
 
         // an NPC reaction must never leak into another scene
         if (typeof showScene === "function" && !window.__ityaShowSceneWrapped) {
