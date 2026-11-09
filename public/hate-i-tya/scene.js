@@ -306,9 +306,9 @@ const scenes = [
                 clickable: false,
                 action: () => {
                         showQuiz({
-                                question: "Hukapata...",
+                                question: "...ani",
                                 options: [
-                                        {text: "ani", correct: true},
+                                        {text: "hukapata", correct: true},
                                         {text: "hapo", correct: false},
                                         {text: "oi!", correct: false}
                                 ],
@@ -1842,26 +1842,14 @@ const scenes = [
                         showQuiz({
                                 mode: "craft",
                                 question: "",
-                                vocabulary: ["ma", "pa", "na", "pati", "hukapata", "kuna", "ani", "hapo", "mokuno", "su", "suya", "hu", "nyu"],
+                                vocabulary: ["ma", "pa", "pati", "hukapata", "kuna", "ani", "hapo", "mokuno", "hu", "nyu"],
                                 correctAnswers: [
                                         "ma pati hukapata",
                                         "ma hukapata pati",
                                         "ma kuna ani",
-                                        "ma hapo su ani",
-                                        "ma mokuno su ani",
-                                        "ma suya ani",
                                         "pa pati hukapata",
                                         "pa hukapata pati",
                                         "pa kuna ani",
-                                        "pa hapo su ani",
-                                        "pa mokuno su ani",
-                                        "pa suya ani",
-                                        "na pati hukapata",
-                                        "na hukapata pati",
-                                        "na kuna ani",
-                                        "na hapo su ani",
-                                        "na mokuno su ani",
-                                        "na suya ani",
                                 ],
                                 onAnswer: (isCorrect) => {
                                         if (isCorrect) {
