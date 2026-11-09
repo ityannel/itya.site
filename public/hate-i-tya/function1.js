@@ -115,7 +115,8 @@ let currentEnterableLocation = null;
 const keyPressed = {};
 
 function resizeCanvas() {
-        canvas.width = window.innerWidth * 0.8;
+        const maxW = Math.min(window.innerWidth * 0.95, window.innerHeight * 0.95 / 0.6);
+        canvas.width = Math.max(320, maxW);
         canvas.height = canvas.width * 0.6;
 }
 
@@ -546,21 +547,25 @@ let sound = new Array(256);
 let soundLoaded = new Array(256);
 
 function loadSound(n, filename){
-        return new Promise((resolve, reject) => {
+        // A missing/slow sound must never block the game from starting
+        // (iOS Safari does not fire canplaythrough before a user gesture).
+        return new Promise((resolve) => {
                 soundLoaded[n] = false;
                 sound[n] = new Audio();
-                
-                sound[n].addEventListener('canplaythrough', () => {
-                        soundLoaded[n] = true;
-                        console.log(`Sound ${n} loaded successfully`);
+                let done = false;
+                const finish = (ok) => {
+                        if (done) return;
+                        done = true;
+                        soundLoaded[n] = ok;
+                        if (!ok) console.warn(`Sound ${n} (${filename}) was not ready; continuing`);
                         resolve();
-                }, { once: true });
-                
-                sound[n].addEventListener('error', (e) => {
-                        console.error(`Failed to load sound ${n}:`, e);
-                        reject(new Error(`Failed to load sound ${n}`));
-                }, { once: true });
-                
+                };
+
+                sound[n].addEventListener('canplaythrough', () => finish(true), { once: true });
+                sound[n].addEventListener('error', () => finish(false), { once: true });
+                setTimeout(() => finish(false), 6000);
+
+                sound[n].preload = "auto";
                 sound[n].src = filename;
                 sound[n].load();
         });
@@ -625,12 +630,22 @@ function stopAllSounds() {
 }
 let currentChars = [];
 
+// Fallbacks used only when a scene has no previous appearance of that character
+// (e.g. when jumping in with ?scene=N or the Space-skip).
+const defaultChars = {
+        mc:  {img: 0,  xP: 28, yP: 56},
+        te:  {img: 5,  xP: 20, yP: 55},
+        cf:  {img: 8,  xP: 55, yP: 60},
+        god: {img: 22, xP: 45, yP: 30, wP: 35},
+};
+
 function setChar(chars) {
         const  prev = currentChars;
         chars = chars ?? [];
         currentChars = chars.map (c => {
                 const previewForChar = prev.find(p => p.char === c.char);
-                const imgId = (c.img ?? previewForChar?.img);
+                const def = defaultChars[c.char] ?? {};
+                const imgId = (c.img ?? previewForChar?.img ?? def.img);
 
 
                 if(imgId == null) {
@@ -640,9 +655,9 @@ function setChar(chars) {
                 const obj = {
                         char: c.char,
                         img: imgId,
-                        xP: c.xP ?? previewForChar?.xP ?? 0,
-                        yP: c.yP ?? previewForChar?.yP ?? 0,
-                        wP: c.wP ?? previewForChar?.wP ?? 10,
+                        xP: c.xP ?? previewForChar?.xP ?? def.xP ?? 0,
+                        yP: c.yP ?? previewForChar?.yP ?? def.yP ?? 0,
+                        wP: c.wP ?? previewForChar?.wP ?? def.wP ?? 10,
                         hP: c.hP ?? previewForChar?.hP ?? null
                 };
 
@@ -662,26 +677,6 @@ function setChar(chars) {
                 // }
                 state.wP = obj.wP;
                 state.hP = obj.hP;
-
-                // const enterFrom = c.enterFrom ?? c.jfkdsal;jkfdl;sajfkdsl;ajfkdla;jfkdsal;fjdksal;jfdksal;fjksdal;jfdk;sa;
-
-                // if(enterFrom) {
-                //         state.jfkdsal;jkfdl;sajfkdsl;ajfkdla;jfkdsal;fjdksal;jfdksal;fjksdal;jfdk;sa = true;
-                //         state.y = canvas.height * obj.yP / 100;
-                //         if(c.enterFrom === "right") {
-                //                 state.x = canvas.width + 10;
-                //         } else if (c.enterFrom === "left") {
-                //                 state.x = 0 - 10;
-                //         }
-                // } else {
-                //         state.jfkdsal;jkfdl;sajfkdsl;ajfkdla;jfkdsal;fjdksal;jfdksal;fjksdal;jfdk;sa = false;
-                        // state.x = canvas.width * state.xP / 100;
-                        // state.y = canvas.height * state.yP / 100;
-                // }
-
-                // if(enterFrom) {
-                //         setDest(obj.char, obj.xP, obj.yP, c.speed ?? 1);
-                // }
 
                 if(c.enterFrom) {
                         if(c.enterFrom === "right") {
@@ -1100,77 +1095,6 @@ function showQuiz ({question, options, onAnswer, mode = "quiz", vocabulary = [],
         document.body.appendChild(container);
 }
 
-// function drawTextRPG(textObj, callback) {
-//         const content = textObj.content ?? "";
-//         const highlights = textObj.highlights ?? [];
-
-//         // if(!textObj) {
-//         //         if (typeof callback === "function") callback();
-//         //         return;
-//         // }
-//         // const content = textObj.content ?? "";
-//         // const interval = textObj.interval ?? 50;
-
-//         // if (typingTimer) {
-//         //         clearTimeout(typingTimer);
-//         //         typingTimer = null;
-//         // }
-//         textProgress = 0;
-
-//         // playTypeSound();
-
-//         function step() {
-//                 playTypeSound();
-//                 textProgress++;
-
-//                 context.font = `${textObj.weight ?? 400} ${textObj.size ?? canvas.height * 0.05}px ${textObj.font ?? "'Press Start 2P', system-ui"}`;
-//                 context.textAlign = textObj.align ?? "center";
-//                 context.textBaseline = textObj.baseline ?? "middle";
-
-//                 const textX = canvas.width / 2;
-//                 const textY = canvas.height - 40;
-                
-
-//                 let x = textX - context.measureText(content.slice(0, textProgress)).width/2;
-//                 for(let i = 0; i < textProgress; i++) {
-//                         const char = content[i];
-//                         const hl = highlights.find(h => i >= h.start && i < h.end);
-
-//                         if(hl) {
-//                                 context.fillStyle = hl.color ?? "red";
-//                                 if(hl.background) {
-//                                         const w = context.measureText(char).width;
-//                                         context.fillRect(x, textY - textObj.size / 2, w, textObj.size);
-//                                 }
-//                         } else {
-//                                 context.fillStyle = "black";
-//                         }
-//                         context.fillText(char, x, textY);
-//                         x += context.measureText(char).width;
-//                 }
-
-//                 if (textProgress < content.length) {
-//                         typingTimer = setTimeout(step, textObj.interval ?? 50);
-//                 } else {
-//                         isTyping = false;
-//                         stopTypeSound();
-//                         typingTimer = null;
-//                         if (typeof callback === "function") callback();
-//                 }
-//         //         playTypeSound();
-//         //         if(textProgress < content.length) {
-//         //                 typingTimer = setTimeout(step, interval);
-//         //         } else {
-//         //                 isTyping = false;
-//         //                 stopTypeSound();
-//         //                 typingTimer = null;
-//         //                 if (typeof callback === "function") callback();
-//         //         }
-//         }
-
-//         step();
-// }
-
 function drawTextRPG(textObj, callback) {
         if (typingTimer) clearTimeout(typingTimer);
         isTyping = true;
@@ -1247,38 +1171,6 @@ function answerCorrect(wordData) {
         }, 50);
         setTimeout(() => word.remove(), 1200);
 }
-
-// function answerWrong(){
-//         playSound(4);
-//         const overLay = document.createElement("div");
-//         Object.assign(overlay.style, {
-//                 position: "fixed",
-//                 top: "0",
-//                 left: "0",
-//                 width: "100%",
-//                 height: "100%",
-//                 backgroundColor: "rgba(255, 50, 50, 0.7)",
-//                 zIndex: 2000,
-//                 animation: "flash-out 0.4s ease-in-out forwards"
-//         });
-
-//         const style = document.createElement("style");
-//         style.innerHTML = `
-//         @keyframes flash-out {
-//         0% {opacity: 1;}
-//         100% {opacity: 0;}
-//         }`;
-
-//         document.head.appendChild(style);
-//         document.body.appendChild(overlay);
-
-//         setTimeout(() => {
-//                 overlay.remove();
-//                 style.remove();
-//                 showScene(currentSceneIndex);
-//         }, 500)
-// }
-
 
 function showWordBook(){
         const old = document.getElementById("wordbook-overlay");
@@ -1455,14 +1347,6 @@ function handleStoryClick() {
                 }
 }
 
-// function StoryClick() {
-//         const rect = canvas.getBoundingClientRect();
-//         const clickX = event.clientX - rect.left;
-//         const clickY = event.clientY - rect.top;
-
-//         console.log(`Map clicked at: ${clickX}, ${clickY}`)
-// }
-
 function updateMapPlayer() {
         let moving = false;
         let nextX = mapPlayer.xP;
@@ -1612,8 +1496,6 @@ function checkPetyakutya() {
 canvas.addEventListener("click", (event) => {
         if(gameState === "story") {
                 handleStoryClick();
-        } else if (gameState === "map") {
-                handleMapClick(event);
         }
 })
 
@@ -1722,4 +1604,4 @@ window.addEventListener("keyup", (e) => {
                         isWalkingSoundPlayingOnMap = false;
                 } 
         }
-})
+})
