@@ -1,9 +1,10 @@
-// i-tya dictionary translator panel (talks to the i-tya-dictionary API).
-//  - Japanese -> i-tya (POST /api/translate with dryRun:true so nothing is saved)
-//  - i-tya -> Japanese (POST /api/reverse-translate)
-//  - hands-free voice mode (Chrome SpeechRecognition): subtitle + AI character reaction
-//    (POST /api/npc), with a small typed fallback. Direction is auto-detected.
-//  - word meanings for the wordbook via GET /api/dictionary?search=...
+// Voice / translation helper for the game. Talks to the i-tya-dictionary backend, but only to its
+// game endpoints, which use the GAME's own vocabulary (not the dictionary site's i-tya):
+//  - Japanese -> game i-tya      POST /api/game-translate
+//  - game i-tya -> Japanese      POST /api/game-reverse
+//  - character reactions          POST /api/npc
+//  - word meanings (wordbook)     GET  /api/game-lexicon
+//  - hands-free voice mode (Chrome SpeechRecognition) with a small typed fallback (T key)
 // All API text is inserted with textContent only.
 
 const DICT_API = "https://i-tya-dictionary.onrender.com";
@@ -21,50 +22,16 @@ function warmUpDictionary() {
         fetch(`${DICT_API}/api/trivias`).catch(() => {});
 }
 
-// ---------- SSE / JSON response reader ----------
-async function readTranslateResponse(res) {
-        const type = res.headers.get("content-type") || "";
-        if (type.includes("application/json")) return await res.json();
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder("utf-8");
-        let buffer = "";
-        let result = null;
-        const handleBlock = (block) => {
-                const dataLines = block.split("\n").filter(l => l.startsWith("data:")).map(l => l.slice(5).trim());
-                for (const d of dataLines) {
-                        if (!d) continue;
-                        try {
-                                const obj = JSON.parse(d);
-                                if (obj && obj.result) result = obj.result;
-                        } catch (e) { /* partial chunk, ignore */ }
-                }
-        };
-        for (;;) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                buffer += decoder.decode(value, { stream: true });
-                let idx;
-                while ((idx = buffer.indexOf("\n\n")) >= 0) {
-                        handleBlock(buffer.slice(0, idx));
-                        buffer = buffer.slice(idx + 2);
-                }
-        }
-        if (buffer.trim()) handleBlock(buffer);
-        return result;
-}
-
-// returns {ok:true, data} or {ok:false, kind:'overload'|'limit'|'network'|'empty', retryAfter?}
+// returns {ok:true, data} or {ok:false, kind:'overload'|'limit'|'network'|'empty'|'nowords', retryAfter?}
 async function callTranslate(direction, sentence) {
-        const url = direction === "toItya" ? `${DICT_API}/api/translate` : `${DICT_API}/api/reverse-translate`;
-        const body = direction === "toItya" ? { sentence, dryRun: true } : { sentence };
+        const url = direction === "toItya" ? `${DICT_API}/api/game-translate` : `${DICT_API}/api/game-reverse`;
         const ctrl = new AbortController();
         const timer = setTimeout(() => ctrl.abort(), TRANSLATE_TIMEOUT_MS);
         try {
                 const res = await fetch(url, {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(body),
+                        body: JSON.stringify({ sentence }),
                         signal: ctrl.signal,
                 });
                 if (res.status === 429) {
@@ -73,8 +40,9 @@ async function callTranslate(direction, sentence) {
                 }
                 if (res.status === 503) return { ok: false, kind: "overload" };
                 if (!res.ok) return { ok: false, kind: "network" };
-                const data = await readTranslateResponse(res);
-                if (!data || !data.translation) return { ok: false, kind: "empty" };
+                const data = await res.json();
+                if (!data || data.ok === false) return { ok: false, kind: data && data.reason === "no_words" ? "nowords" : "empty" };
+                if (!data.translation) return { ok: false, kind: "empty" };
                 return { ok: true, data };
         } catch (e) {
                 return { ok: false, kind: "network" };
@@ -83,22 +51,27 @@ async function callTranslate(direction, sentence) {
         }
 }
 
-// ---------- wordbook meanings ----------
-const wordMeaningCache = {};   // word(lowercase) -> string | null
+// ---------- wordbook meanings (game vocabulary only) ----------
+let gameLexiconPromise = null;
+
+function loadGameLexicon() {
+        if (!gameLexiconPromise) {
+                gameLexiconPromise = fetch(`${DICT_API}/api/game-lexicon`)
+                        .then(r => (r.ok ? r.json() : null))
+                        .then(j => {
+                                if (!j || !Array.isArray(j.words)) throw new Error("bad lexicon");
+                                const map = {};
+                                j.words.forEach(w => { map[String(w.word).toLowerCase()] = w.ja; });
+                                return map;
+                        })
+                        .catch(() => { gameLexiconPromise = null; return null; });   // try again next time
+        }
+        return gameLexiconPromise;
+}
 
 async function lookupWordMeaning(word) {
-        const key = String(word).toLowerCase();
-        if (key in wordMeaningCache) return wordMeaningCache[key];
-        try {
-                const res = await fetch(`${DICT_API}/api/dictionary?page=1&search=${encodeURIComponent(key)}`);
-                if (!res.ok) return null;
-                const json = await res.json();
-                const hit = (json.words || []).find(w => String(w.word).toLowerCase() === key);
-                wordMeaningCache[key] = hit ? (hit.meaning || null) : null;
-                return wordMeaningCache[key];
-        } catch (e) {
-                return null; // do not cache failures
-        }
+        const map = await loadGameLexicon();
+        return (map && map[String(word).toLowerCase()]) || null;
 }
 
 // ---------- hands-free voice mode ----------
@@ -176,18 +149,17 @@ function buildBubble(id, big, small, who) {
         const color = CHAR_COLORS[who] || "#000";
         const el = mk("div", {
                 position: "fixed", left: "0", top: "0", zIndex: "8000", boxSizing: "border-box",
-                maxWidth: `${Math.max(150, rect.width * 0.36)}px`, padding: "5px 10px",
+                maxWidth: `${Math.max(150, rect.width * 0.42)}px`, padding: "5px 10px",
                 backgroundColor: "#fff", border: "3px solid #000", borderRadius: "15px",
-                textAlign: "center", cursor: "pointer", visibility: "hidden",
+                textAlign: "center", pointerEvents: "none", visibility: "hidden",   // clicks pass through to the game
         });
         el.id = id;
-        const bigEl = mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(10, rect.height * 0.032)}px`, lineHeight: "1.45", color, wordBreak: "break-word" }, big);
-        const smallEl = mk("div", { fontFamily: TR_FONT_JA, fontSize: `${Math.max(11, rect.height * 0.026)}px`, color: "#555", marginTop: "2px", lineHeight: "1.3", wordBreak: "break-word" }, small);
+        const bigEl = mk("div", { fontFamily: TR_FONT_PIXEL, fontSize: `${Math.max(9, rect.height * 0.027)}px`, lineHeight: "1.45", color, wordBreak: "break-word" }, big);
+        const smallEl = mk("div", { fontFamily: TR_FONT_JA, fontSize: `${Math.max(10, rect.height * 0.024)}px`, color: "#555", marginTop: "2px", lineHeight: "1.3", wordBreak: "break-word" }, small);
         const tail = mk("div", { position: "absolute", bottom: "-9px", width: "14px", height: "14px", backgroundColor: "#fff",
                 borderRight: "3px solid #000", borderBottom: "3px solid #000", transform: "rotate(45deg)" });
         tail.className = "bubble-tail";
         el.append(bigEl, smallEl, tail);
-        el.onclick = () => removeBubble(id);
         document.body.appendChild(el);
         el.__big = bigEl; el.__small = smallEl; el.__who = who;
         bubbleTimers[id] = setTimeout(() => removeBubble(id), 9000);
@@ -355,14 +327,12 @@ function handleUtterance(raw, confidence, typed) {
                 if (!el || currentSceneIndex !== sceneIdx) return;
                 if (r.ok) {
                         translateCount++;
-                        const hasNew = direction === "toItya" && (r.data.breakdown || []).some(b => b.status === "new");
                         el.__big.textContent = r.data.translation;
                         el.__big.style.fontFamily = direction === "toItya" ? TR_FONT_PIXEL : TR_FONT_JA;
                         el.__small.textContent = text;
-                        if (hasNew) el.__small.textContent = `${text}（辞書にない語の案を含みます）`;
                 } else {
                         const msgs = { limit: `混み合っています。${r.retryAfter} 秒ほど待ってね。`, overload: "混み合っています。少し待ってね。",
-                                empty: "うまく訳せませんでした。", network: "辞書につながりません。ゲームは続けられます。" };
+                                empty: "うまく訳せませんでした。", nowords: "その言葉は、まだゲームにありません。", network: "辞書につながりません。ゲームは続けられます。" };
                         removeBubble("player-bubble");
                         showNote(msgs[r.kind] || msgs.network);
                         return;
